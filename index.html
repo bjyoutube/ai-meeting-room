@@ -179,6 +179,7 @@
   .dash.collapsed {
     max-height: 0;
     opacity: 0;
+    visibility: hidden;
     border-bottom-color: transparent;
     overflow: hidden;
   }
@@ -1769,6 +1770,7 @@
     var pending = {};
     messages.forEach(function (m) {
       if (!m || m.kind !== 'user' || !m.ghHandles || !m.ghHandles.length) return;
+      if (!m.remoteIds || !m.remoteIds.length) return; // 실제로 커밋된 지시만 '처리 중'
       if (Date.now() - m.ts > 7 * 86400000) return;
       m.ghHandles.forEach(function (h) {
         if (!reportFor(m.remoteIds, h)) pending[h] = true;
@@ -2344,17 +2346,22 @@
     return s.length > 48 ? s.slice(0, 48) + '…' : s;
   }
 
-  function recentUserLines() {
-    var users = messages.filter(function (m) { return m.kind === 'user'; }).slice(-3);
+  function recentUserLines(excludeText) {
+    var skip = String(excludeText || '').replace(/\s+/g, ' ').trim();
+    var users = messages.filter(function (m) {
+      if (m.kind !== 'user') return false;
+      if (!skip) return true;
+      return String(m.text).replace(/\s+/g, ' ').trim() !== skip;
+    }).slice(-3);
     return users.map(function (m) { return '· "' + short(String(m.text).replace(/@\S+/g, '').trim(), 44) + '"'; }).join('\n');
   }
 
-  function demoSummary() {
+  function demoSummary(askedText) {
     return [
       '지금까지 오피스 대화를 회의록으로 정리했습니다.',
       '',
       '■ 다룬 이야기',
-      recentUserLines() || '· (아직 대화가 없습니다)',
+      recentUserLines(askedText) || '· (아직 대화가 없습니다)',
       '',
       '■ 직원들이 공통으로 본 것',
       '· 방카르1: 지금 결정할 것은 “누구에게 얼마에” 한 줄',
@@ -2544,7 +2551,7 @@
     else if (/할\s*일|액션\s*아이템|투두|체크리스트/.test(t)) kind = 'todo';
     else if (/초안|카피|문구|글\s*써/.test(t)) kind = 'draft';
 
-    if (kind === 'summary') return demoSummary();
+    if (kind === 'summary') return demoSummary(t);
     if (kind === 'todo') return demoTodo(topic);
     if (kind === 'draft') return demoDraft(topic);
 
@@ -2586,10 +2593,14 @@
     renderHeader();
 
     if (!hasKey('github')) {
+      var demoAll = connectedApiCount() === 0;
       messages.push({
         id: uid(), kind: 'notice', ts: Date.now(),
-        text: '⚠️ ' + targets.map(function (e) { return '@' + e.name; }).join(' ') +
-          '은 GitHub 공용 소통창으로 움직입니다. ⚙️ 연결 설정에서 GitHub PAT를 넣으면 이 지시가 office-messages.json에 실제로 커밋됩니다. (지금은 이 화면에만 남았습니다 — 바로 답을 받으려면 @GPT·@클로드·@제미나이를 찍어 주세요.)'
+        text: demoAll
+          ? 'ℹ️ 지금은 데모 모드입니다. ' + targets.map(function (e) { return '@' + e.name; }).join(' ') +
+            '은(는) ⚙️에 GitHub PAT를 넣으면 공용 소통창(office-messages.json)에서 실제로 움직입니다. 지금은 데모 답변으로 보여드립니다.'
+          : '⚠️ ' + targets.map(function (e) { return '@' + e.name; }).join(' ') +
+            '은 GitHub 공용 소통창으로 움직입니다. ⚙️ 연결 설정에서 GitHub PAT를 넣으면 이 지시가 office-messages.json에 실제로 커밋됩니다. (지금은 이 화면에만 남았습니다.)'
       });
       writeJSON(LS.msgs, messages);
       renderChat(true);

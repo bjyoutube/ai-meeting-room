@@ -165,7 +165,7 @@
      ============================================================ */
   .dash {
     flex: 0 0 auto;
-    max-height: 45dvh;
+    max-height: 52dvh;
     overflow-y: auto;
     overflow-x: hidden;
     background:
@@ -253,7 +253,7 @@
 
   .cards {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(232px, 1fr));
+    grid-template-columns: repeat(3, minmax(0, 1fr));
     gap: 10px;
     margin-top: 9px;
   }
@@ -1058,7 +1058,7 @@
     .title-wrap h1 { font-size: 14.5px; }
     .online-pill { height: 36px; padding: 0 8px; font-size: 12px; }
     .online-pill .label { display: none; }
-    .dash { max-height: 44dvh; }
+    .dash { max-height: 52dvh; scrollbar-gutter: stable; }
     .dash-inner { padding: 10px 10px 11px; }
     .cards { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
     .emp-card { padding: 9px 8px 8px; border-radius: 12px; }
@@ -2119,9 +2119,8 @@
     throw new Error('동시에 수정돼 커밋이 겹쳤습니다. 잠시 뒤 다시 시도해 주세요.');
   }
 
-  async function testGitHub() {
-    var token = (keys.github || '').trim();
-    if (!token) { toast('먼저 GitHub PAT를 입력하고 저장해 주세요.'); return; }
+  async function testGitHub(token) {
+    if (!token) { toast('먼저 GitHub PAT를 입력해 주세요.'); return; }
     try {
       var res = await fetch(API_URL, { headers: ghHeaders(token), cache: 'no-store' });
       if (res.status === 200) {
@@ -3014,12 +3013,9 @@
       }
       var test = e.target.closest('[data-gh-test]');
       if (test) {
-        ['openai', 'openrouter', 'anthropic', 'gemini', 'github'].forEach(function (p) {
-          var kEl = document.getElementById('key-' + p);
-          if (kEl) keys[p] = kEl.value.trim();
-        });
-        writeJSON(LS.keys, keys);
-        testGitHub();
+        var ghEl = document.getElementById('key-github');
+        // 테스트는 지금 입력한 값으로만 확인하고 저장하지 않는다
+        testGitHub(ghEl ? ghEl.value.trim() : (keys.github || '').trim());
       }
     });
     $('#wipeBtn').addEventListener('click', function () {

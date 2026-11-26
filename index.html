@@ -1790,6 +1790,23 @@
     return hit;
   }
 
+  /* 카드 목록을 통째로 다시 그리지 않고 시간·상태만 갱신 (포커스·스크롤 튐 방지) */
+  function updateOfficeTimes() {
+    var flip = false;
+    $$('.emp-card').forEach(function (card) {
+      var emp = empById(card.dataset.emp);
+      if (!emp) return;
+      var st = emp.kind === 'github' ? ghState(emp) : apiState(emp);
+      if (!card.classList.contains(st)) { flip = true; return; }
+      var el = card.querySelector('.last');
+      if (el) {
+        var last = lastActivityOf(emp);
+        el.textContent = last ? timeAgo(last) : '기록 없음';
+      }
+    });
+    if (flip) renderOffice();
+  }
+
   function renderDashOpen() {
     var dash = $('#dash');
     dash.classList.toggle('collapsed', !ui.dashOpen);
@@ -2838,7 +2855,7 @@
     btn.textContent = '🧹 한 번 더 누르면 초기화';
     setTimeout(function () {
       if (btn) { btn.dataset.armed = '0'; btn.textContent = '🧹 대화 초기화'; }
-    }, 3000);
+    }, 6000);
   }
 
   function exportChat() {
@@ -3130,9 +3147,9 @@
       if (changed) { writeJSON(LS.usage, usage); renderOffice(); }
     }, 60000);
 
-    // 상대 시간(마지막 활동) 주기 갱신
+    // 상대 시간(마지막 활동) 주기 갱신 — 상태가 바뀔 때만 카드를 다시 그린다
     setInterval(function () {
-      if (!document.hidden) renderOffice();
+      if (!document.hidden) updateOfficeTimes();
     }, 30000);
   }
 

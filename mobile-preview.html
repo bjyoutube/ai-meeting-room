@@ -10,16 +10,19 @@
 </style>
 </head>
 <body>
-<iframe id="f" src="./index.html" title="mobile preview"></iframe>
+<iframe id="f" title="mobile preview"></iframe>
 <script>
-document.getElementById('f').addEventListener('load', function () {
+var f = document.getElementById('f');
+f.addEventListener('load', function () {
   try {
-    var w = this.contentWindow;
+    var w = f.contentWindow;
     var dash = w.document.getElementById('dash');
     var btn = w.document.getElementById('dashBtn');
     if (dash && btn && dash.classList.contains('collapsed')) btn.click();
   } catch (e) { /* same-origin only */ }
 });
+// Pages CDN 캐시를 피하려고 매번 새 쿼리로 불러온다
+f.src = './index.html?mobile=' + Date.now();
 </script>
 </body>
 </html>

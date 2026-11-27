@@ -12,6 +12,9 @@
 </style>
 </head>
 <body>
-  <div class="phone"><iframe src="./index.html?mobile=1" title="AI 소통창 모바일 미리보기"></iframe></div>
+  <div class="phone"><iframe id="f" src="./index.html?mobile=1" title="AI 소통창 모바일 미리보기"></iframe></div>
+  <script>
+    document.getElementById('f').src = './index.html' + (location.search || '');
+  </script>
 </body>
 </html>

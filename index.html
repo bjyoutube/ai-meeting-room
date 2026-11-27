@@ -3,1611 +3,707 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-<title>1인 기업 사이버 오피스 — 피클팀 + GPT·클로드·제미나이</title>
-<meta name="description" content="1인 기업용 사이버 오피스: 방카르 1·2·3(깃허브 공용 소통창)과 GPT·클로드·제미나이를 한 화면에서 지시하는 단일 HTML 웹앱" />
-<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🏢</text></svg>" />
+<meta name="theme-color" content="#FEE500" />
+<title>AI 소통창 — 대표 1명 + AI 직원 6명 단톡방</title>
+<meta name="description" content="카카오톡 단톡방처럼 생긴 AI 소통창: 포지션별 AI 직원 6명이 서로 읽고 이어서 발언하는 릴레이 회의·현황 보고 웹앱. GitHub 공용 파일로 PC와 폰이 같은 방을 봅니다." />
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>💬</text></svg>" />
 <style>
-  /* ============================================================
-     기본 설정 (색·여백)
-     ============================================================ */
-  *, *::before, *::after { box-sizing: border-box; }
-  :root {
-    --yellow: #ffe14d;
-    --yellow-soft: #fff8d6;
-    --yellow-line: #f2d873;
-    --ink: #17202a;
-    --ink-soft: #33475b;
-    --muted: #6b7a8c;
-    --line: #e3eaf0;
-    --line-soft: #eef3f7;
-    --green: #16a34a;
-    --green-soft: #e8f7ee;
-    --amber: #d97706;
-    --amber-soft: #fff4d6;
-    --red: #dc2626;
-    --red-soft: #fdeaea;
-    --blue: #1d4ed8;
-    --blue-soft: #e8efff;
-    --chat-top: #d3e2ec;
-    --chat-bottom: #adc6d7;
-    --radius: 14px;
-    --shadow: 0 1px 2px rgba(20, 40, 60, .09);
-  }
-  html, body { height: 100%; overflow: hidden; }
+/* ============================================================
+   AI 소통창 — 카카오톡 단톡방 형태
+   PC·스마트폰에서 같은 화면(같은 배치·같은 크기)으로 보이게 만든다.
+   ============================================================ */
+*, *::before, *::after { box-sizing: border-box; }
+
+:root {
+  --kakao: #FEE500;
+  --kakao-2: #FFEB4D;
+  --kakao-ink: #191600;
+  --room: #B2C7D9;          /* 카톡 채팅방 배경 */
+  --white: #ffffff;
+  --ink: #1c1c1e;
+  --ink-2: #3d4b59;
+  --sub: #6b7684;
+  --line: #E5E8EB;
+  --line-2: #EDF1F4;
+  --green: #12B76A;
+  --red: #F04438;
+  --amber: #B54708;
+  --radius: 16px;
+  --shadow-1: 0 1px 2px rgba(16, 24, 40, .08);
+  --shadow-2: 0 8px 28px rgba(16, 24, 40, .16);
+  --font: "Pretendard", -apple-system, BlinkMacSystemFont, "Apple SD Gothic Neo", "Malgun Gothic", "Noto Sans KR", "Segoe UI", Roboto, sans-serif;
+}
+
+html, body { height: 100%; }
+body {
+  margin: 0;
+  font-family: var(--font);
+  color: var(--ink);
+  background: #d7e0e8;
+  -webkit-font-smoothing: antialiased;
+  -webkit-tap-highlight-color: transparent;
+  overscroll-behavior: none;
+}
+button, input, textarea, select { font-family: inherit; }
+a { color: #1B64DA; }
+code { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: .92em; }
+
+/* ---------- 앱 틀 ---------- */
+.app {
+  position: fixed;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  background: var(--room);
+  overflow: hidden;
+}
+
+@media (min-width: 780px) {
   body {
-    margin: 0;
-    font-family: "Pretendard", -apple-system, BlinkMacSystemFont, "Apple SD Gothic Neo", "Malgun Gothic", "Noto Sans KR", "Segoe UI", sans-serif;
-    color: var(--ink);
-    background: #e7eef5;
-    -webkit-font-smoothing: antialiased;
-    -webkit-tap-highlight-color: transparent;
+    display: grid;
+    place-items: center;
+    background:
+      radial-gradient(1200px 700px at 20% 0%, #eef3f7 0%, #cfdbe6 55%, #bccbd8 100%);
   }
-  button { font-family: inherit; }
-  code { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; }
   .app {
-    position: fixed;
-    inset: 0;
-    display: flex;
-    flex-direction: column;
-    width: 100%;
-    max-width: 1080px;
-    height: 100dvh;
-    margin: 0 auto;
-    overflow: hidden;
-    background: #f7fafc;
-    box-shadow: 0 0 44px rgba(22, 42, 64, .10);
-  }
-
-  /* ============================================================
-     상단 헤더
-     ============================================================ */
-  .topbar {
     position: relative;
-    z-index: 30;
-    display: flex;
-    align-items: center;
-    gap: 9px;
-    padding: 9px 12px;
-    background: #fff;
-    border-bottom: 1px solid var(--line);
+    inset: auto;
+    width: min(720px, 100%);
+    height: min(100vh, 960px);
+    height: min(100dvh, 960px);
+    border-radius: 22px;
+    box-shadow: 0 24px 60px rgba(15, 30, 50, .28), 0 2px 0 rgba(255,255,255,.6) inset;
   }
-  .icon-btn {
-    display: grid;
-    place-items: center;
-    flex: 0 0 auto;
-    width: 38px;
-    height: 38px;
-    font-size: 17px;
-    line-height: 1;
-    color: var(--ink-soft);
-    cursor: pointer;
-    background: #fff;
-    border: 1px solid var(--line);
-    border-radius: 12px;
-    transition: background .15s, transform .1s;
-  }
-  .icon-btn:hover { background: #f6f9fc; }
-  .icon-btn:active { transform: scale(.96); }
-  .icon-btn.is-on { background: var(--yellow-soft); border-color: var(--yellow-line); }
-  .title-wrap { flex: 1 1 auto; min-width: 0; }
-  .title-wrap h1 {
-    margin: 0;
-    overflow: hidden;
-    font-size: 16px;
-    font-weight: 800;
-    line-height: 1.25;
-    letter-spacing: -.35px;
-    white-space: nowrap;
-    text-overflow: ellipsis;
-  }
-  .room-meta {
-    margin: 2px 0 0;
-    overflow: hidden;
-    font-size: 11.5px;
-    color: var(--muted);
-    white-space: nowrap;
-    text-overflow: ellipsis;
-  }
-  .top-actions { display: flex; gap: 6px; align-items: center; }
-  .online-pill {
-    display: inline-flex;
-    gap: 5px;
-    align-items: center;
-    height: 38px;
-    padding: 0 10px;
-    font-size: 13px;
-    font-weight: 700;
-    color: var(--ink-soft);
-    cursor: pointer;
-    background: #fff;
-    border: 1px solid var(--line);
-    border-radius: 12px;
-  }
-  .online-pill .live-dot {
-    width: 7px; height: 7px; border-radius: 50%;
-    background: #22c55e;
-    box-shadow: 0 0 0 3px rgba(34, 197, 94, .16);
-  }
+}
 
-  /* 헤더 ☰ 메뉴 */
-  .menu-pop {
-    position: absolute;
-    top: 52px;
-    left: 12px;
-    z-index: 40;
-    width: 224px;
-    padding: 6px;
-    background: #fff;
-    border: 1px solid var(--line);
-    border-radius: 14px;
-    box-shadow: 0 14px 34px rgba(20, 40, 60, .18);
-  }
-  .menu-pop[hidden] { display: none; }
-  .menu-pop button {
-    display: flex;
-    gap: 8px;
-    align-items: center;
-    width: 100%;
-    padding: 9px 10px;
-    font-size: 13.5px;
-    color: var(--ink-soft);
-    text-align: left;
-    cursor: pointer;
-    background: none;
-    border: 0;
-    border-radius: 9px;
-  }
-  .menu-pop button:hover { background: var(--line-soft); }
-  .menu-pop hr { margin: 5px 4px; border: 0; border-top: 1px solid var(--line); }
+/* ---------- 상단 헤더(노란색) ---------- */
+.hd {
+  flex: 0 0 auto;
+  background: linear-gradient(180deg, var(--kakao-2), var(--kakao));
+  box-shadow: 0 1px 0 rgba(0,0,0,.06), 0 3px 10px rgba(20,40,60,.08);
+  padding: 9px 12px 6px;
+  z-index: 6;
+  padding-top: max(9px, env(safe-area-inset-top));
+}
+.hd-row { display: flex; align-items: center; gap: 8px; }
+.brand { display: flex; align-items: center; gap: 7px; min-width: 0; }
+.brand .ico {
+  width: 27px; height: 27px; border-radius: 9px;
+  background: var(--kakao-ink); color: var(--kakao);
+  display: grid; place-items: center; font-size: 14px; flex: 0 0 auto;
+}
+.brand h1 {
+  margin: 0; font-size: 17px; font-weight: 800; letter-spacing: -.3px;
+  color: var(--kakao-ink); white-space: nowrap;
+}
+.hd-side { margin-left: auto; display: flex; align-items: center; gap: 6px; }
+.conn {
+  border: 0; cursor: pointer; display: inline-flex; align-items: center; gap: 5px;
+  background: rgba(25, 22, 0, .78); color: #fff;
+  border-radius: 999px; padding: 5px 10px 5px 8px;
+  font-size: 11.5px; font-weight: 700; letter-spacing: -.2px;
+  white-space: nowrap; transition: background .15s;
+}
+.conn .dot { width: 7px; height: 7px; border-radius: 50%; background: #7CF0B0; box-shadow: 0 0 0 3px rgba(124,240,176,.22); }
+.conn.local .dot { background: #FFD166; box-shadow: 0 0 0 3px rgba(255,209,102,.2); }
+.conn.err { background: rgba(140, 20, 20, .9); }
+.conn.err .dot { background: #FFB4AB; box-shadow: none; }
+.hd-btn {
+  border: 1px solid rgba(0,0,0,.07); background: rgba(255,255,255,.62);
+  color: #2b2500; border-radius: 999px; padding: 6px 9px;
+  font-size: 11.5px; font-weight: 800; cursor: pointer; white-space: nowrap;
+  transition: background .15s, transform .1s;
+}
+.hd-btn:hover { background: rgba(255,255,255,.9); }
+.hd-btn:active { transform: scale(.97); }
 
-  /* ============================================================
-     사이버 오피스 (직원 책상 대시보드)
-     ============================================================ */
-  .dash {
-    flex: 0 0 auto;
-    max-height: 52dvh;
-    overflow-y: auto;
-    overflow-x: hidden;
-    background:
-      linear-gradient(#fff, #fff) padding-box,
-      repeating-linear-gradient(90deg, #f2f7fb 0 1px, transparent 1px 22px) border-box;
-    border-bottom: 1px solid var(--line);
-    transition: max-height .32s ease, opacity .22s ease;
-    -webkit-overflow-scrolling: touch;
-    overscroll-behavior: contain;
-  }
-  .dash.collapsed {
-    max-height: 0;
-    opacity: 0;
-    visibility: hidden;
-    border-bottom-color: transparent;
-    overflow: hidden;
-  }
-  .dash-inner { padding: 11px 14px 12px; }
-  .dash-head {
-    display: flex;
-    gap: 10px;
-    align-items: flex-start;
-    justify-content: space-between;
-  }
-  .dash-head h2 {
-    display: flex;
-    gap: 6px;
-    align-items: center;
-    margin: 0;
-    font-size: 15px;
-    font-weight: 800;
-    letter-spacing: -.3px;
-  }
-  .dash-sub {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 8px;
-    align-items: center;
-    margin: 4px 0 0;
-    font-size: 11.5px;
-    color: var(--muted);
-  }
-  .dash-sub b { font-weight: 800; color: var(--ink-soft); }
-  .dash-actions { display: flex; gap: 6px; flex: 0 0 auto; }
-  .dash-actions button {
-    display: grid;
-    place-items: center;
-    width: 34px; height: 34px;
-    font-size: 15px;
-    color: var(--muted);
-    cursor: pointer;
-    background: #fff;
-    border: 1px solid var(--line);
-    border-radius: 10px;
-  }
-  .dash-actions button:hover { background: #f6f9fc; }
-  .dash-actions button.is-on { color: #b45309; background: var(--yellow-soft); border-color: var(--yellow-line); }
+@media (max-width: 420px) {
+  .hd { padding-left: 9px; padding-right: 9px; }
+  .hd-row { gap: 5px; }
+  .brand { gap: 5px; }
+  .brand h1 { font-size: 15.5px; }
+  .brand .ico { width: 24px; height: 24px; font-size: 12px; }
+  .hd-side { gap: 4px; }
+  .hd-btn { padding: 5px 7px; font-size: 10.5px; }
+  .conn { font-size: 10.5px; padding: 4px 8px 4px 7px; }
+  .bcol { max-width: 82%; }
+  .hint { display: none; }
+}
 
-  .sync-line {
-    display: flex;
-    gap: 6px;
-    align-items: center;
-    padding: 5px 9px;
-    margin: 9px 0 2px;
-    overflow: hidden;
-    font-size: 11px;
-    color: #4b6b85;
-    white-space: nowrap;
-    text-overflow: ellipsis;
-    background: #f4f9fd;
-    border: 1px solid #e1ecf5;
-    border-radius: 9px;
-  }
-  .sync-dot {
-    flex: 0 0 auto;
-    width: 7px; height: 7px;
-    background: #94a3b8;
-    border-radius: 50%;
-  }
-  .sync-line.ok .sync-dot { background: #22c55e; box-shadow: 0 0 0 3px rgba(34, 197, 94, .16); }
-  .sync-line.err .sync-dot { background: var(--red); box-shadow: 0 0 0 3px rgba(220, 38, 38, .14); }
-  .sync-line.loading .sync-dot { background: #f59e0b; animation: blinkDot 1s infinite; }
-  @keyframes blinkDot { 0%, 100% { opacity: .25; } 50% { opacity: 1; } }
-  .sync-line b { font-weight: 800; }
+/* ---------- 멤버 바 ---------- */
+.members {
+  display: flex; gap: 6px; overflow-x: auto; overflow-y: hidden;
+  padding: 8px 1px 3px; scrollbar-width: none; -webkit-overflow-scrolling: touch;
+}
+.members::-webkit-scrollbar { display: none; }
+.mchip {
+  flex: 0 0 auto; display: inline-flex; align-items: center; gap: 5px;
+  background: #fff; border: 1px solid rgba(0,0,0,.06); border-radius: 999px;
+  padding: 4px 9px 4px 4px; cursor: pointer; box-shadow: var(--shadow-1);
+  font-size: 11.5px; font-weight: 800; color: #2f3a45; letter-spacing: -.2px;
+  transition: transform .1s, box-shadow .15s;
+}
+.mchip:active { transform: scale(.97); }
+.mchip .no {
+  width: 18px; height: 18px; border-radius: 6px; flex: 0 0 auto;
+  display: grid; place-items: center; color: #fff; font-size: 10.5px; font-weight: 800;
+  background: var(--c, #888);
+}
+.mchip .mt { white-space: nowrap; }
+.mchip .st { font-size: 10px; font-weight: 700; color: #98a2b3; padding: 1px 5px; border-radius: 999px; background: #F2F4F7; }
+.mchip .st.live { color: #05603A; background: #D1FADF; }
+.mchip .st.done { color: #175CD3; background: #D1E9FF; }
+.mchip .st.live::after {
+  content: ""; display: inline-block; width: 4px; height: 4px; border-radius: 50%;
+  background: #12B76A; margin-left: 3px; vertical-align: middle; animation: blink 1s infinite;
+}
+@keyframes blink { 0%,100% { opacity: 1 } 50% { opacity: .25 } }
 
-  .cards {
-    display: grid;
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-    gap: 10px;
-    margin-top: 9px;
-  }
-  .emp-card {
-    position: relative;
-    display: flex;
-    flex-direction: column;
-    padding: 11px 11px 10px;
-    overflow: hidden;
-    background: #fff;
-    border: 1px solid var(--line);
-    border-radius: 15px;
-    transition: border-color .2s, box-shadow .2s, transform .2s;
-  }
-  .emp-card::before {
-    content: "";
-    position: absolute;
-    inset: 0 0 auto 0;
-    height: 3px;
-    background: var(--accent, #cbd5e1);
-    opacity: .85;
-  }
-  .emp-card.working {
-    border-color: #f3cf74;
-    box-shadow: 0 0 0 3px rgba(250, 204, 21, .16);
-  }
-  .emp-card.working::after {
-    content: "";
-    position: absolute;
-    inset: 0 0 auto 0;
-    height: 3px;
-    background: linear-gradient(90deg, transparent 0%, #f59e0b 45%, #fde68a 55%, transparent 100%);
-    background-size: 220% 100%;
-    animation: sweep 1.5s linear infinite;
-  }
-  @keyframes sweep {
-    from { background-position: 220% 0; }
-    to { background-position: -220% 0; }
-  }
-  .card-head { display: flex; gap: 8px; align-items: center; min-width: 0; }
-  .emp-card .av {
-    display: grid;
-    place-items: center;
-    flex: 0 0 auto;
-    width: 36px; height: 36px;
-    font-size: 18px;
-    border-radius: 12px;
-    transition: box-shadow .2s;
-  }
-  .emp-card.working .av { animation: pulseRing 1.5s ease-in-out infinite; }
-  @keyframes pulseRing {
-    0%, 100% { box-shadow: 0 0 0 0 rgba(245, 158, 11, .48); }
-    55% { box-shadow: 0 0 0 8px rgba(245, 158, 11, 0); }
-  }
-  .who-wrap { flex: 1 1 auto; min-width: 0; }
-  .who-wrap .who {
-    display: block;
-    overflow: hidden;
-    font-size: 13px;
-    font-weight: 800;
-    letter-spacing: -.25px;
-    white-space: nowrap;
-    text-overflow: ellipsis;
-  }
-  .who-wrap .role {
-    display: block;
-    overflow: hidden;
-    font-size: 10.5px;
-    line-height: 1.35;
-    color: var(--muted);
-    white-space: nowrap;
-    text-overflow: ellipsis;
-  }
-  .tag {
-    flex: 0 0 auto;
-    padding: 2px 7px;
-    font-size: 9.5px;
-    font-weight: 800;
-    letter-spacing: -.1px;
-    color: var(--muted);
-    white-space: nowrap;
-    background: #f4f7fa;
-    border-radius: 999px;
-  }
-  .tag.api { color: #15803d; background: var(--green-soft); }
-  .tag.demo { color: #a16207; background: var(--amber-soft); }
-  .tag.gh { color: #1e40af; background: var(--blue-soft); }
-  .state-row {
-    display: flex;
-    gap: 6px;
-    align-items: center;
-    justify-content: space-between;
-    margin-top: 9px;
-  }
-  .state {
-    display: inline-flex;
-    gap: 4px;
-    align-items: center;
-    padding: 3px 8px;
-    font-size: 10.5px;
-    font-weight: 800;
-    white-space: nowrap;
-    border-radius: 999px;
-  }
-  .state.idle { color: #15803d; background: var(--green-soft); }
-  .state.working { color: #b45309; background: var(--amber-soft); animation: softPulse 1.4s ease-in-out infinite; }
-  .state.done { color: #0e7490; background: #e0f2fe; }
-  @keyframes softPulse {
-    0%, 100% { opacity: 1; }
-    50% { opacity: .55; }
-  }
-  .last {
-    margin-left: auto;
-    overflow: hidden;
-    font-size: 10px;
-    color: #94a3b8;
-    white-space: nowrap;
-    text-overflow: ellipsis;
-  }
-  .q-mini {
-    display: none;
-    flex: 0 0 auto;
-    font-size: 9.5px;
-    font-weight: 700;
-    color: #6b8199;
-    white-space: nowrap;
-  }
-  .mini {
-    display: flex;
-    gap: 6px;
-    align-items: center;
-    margin-top: 8px;
-  }
-  .mini-bar {
-    flex: 1 1 auto;
-    height: 6px;
-    overflow: hidden;
-    background: #eef2f6;
-    border-radius: 999px;
-  }
-  .mini-bar i {
-    display: block;
-    height: 100%;
-    background: linear-gradient(90deg, #34d399, #22c55e);
-    border-radius: 999px;
-    transition: width .35s ease;
-  }
-  .mini-bar.warn i { background: linear-gradient(90deg, #fbbf24, #f59e0b); }
-  .mini-bar.bad i { background: linear-gradient(90deg, #f87171, #ef4444); }
-  .mini-pct { flex: 0 0 auto; font-size: 9.5px; color: var(--muted); white-space: nowrap; }
-  .mini-note {
-    margin-top: 8px;
-    overflow: hidden;
-    font-size: 9.5px;
-    color: #6b8199;
-    white-space: nowrap;
-    text-overflow: ellipsis;
-  }
-  .ghost-btn {
-    width: 100%;
-    padding: 6px 8px;
-    margin-top: 9px;
-    font-size: 11px;
-    font-weight: 700;
-    color: var(--ink-soft);
-    cursor: pointer;
-    background: #fff;
-    border: 1px solid var(--line);
-    border-radius: 9px;
-  }
-  .ghost-btn:hover { background: #f6f9fc; border-color: #cfe0ec; }
-  .dash-note {
-    margin: 10px 2px 0;
-    font-size: 10.5px;
-    line-height: 1.65;
-    color: #8697a8;
-  }
-  .dash-note b { color: #64748b; }
-  .dash-note code { padding: 1px 3px; font-size: 10px; background: #f1f5f9; border-radius: 3px; }
+/* ---------- 타임라인 ---------- */
+.timeline {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding: 10px 12px 18px;
+  background:
+    radial-gradient(140% 90% at 50% 0%, rgba(255,255,255,.20), rgba(255,255,255,0) 60%),
+    var(--room);
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
+  scroll-behavior: smooth;
+}
+.timeline::-webkit-scrollbar { width: 8px; }
+.timeline::-webkit-scrollbar-thumb { background: rgba(0,0,0,.16); border-radius: 8px; }
 
-  /* ============================================================
-     채팅 영역
-     ============================================================ */
-  .chat {
-    position: relative;
-    flex: 1 1 auto;
-    overflow-x: hidden;
-    overflow-y: auto;
-    padding: 16px 14px 8px;
-    background:
-      radial-gradient(1100px 480px at 50% -8%, #dbe9f2 0%, var(--chat-top) 42%, var(--chat-bottom) 100%);
-    overscroll-behavior: contain;
-  }
-  .intro {
-    max-width: 660px;
-    margin: 6px auto 20px;
-    padding: 18px 18px 16px;
-    background: rgba(255, 255, 255, .95);
-    border: 1px solid rgba(255, 255, 255, .8);
-    border-radius: 18px;
-    box-shadow: 0 6px 20px rgba(24, 48, 70, .10);
-  }
-  .intro[hidden] { display: none; }
-  .intro .intro-emoji { font-size: 26px; line-height: 1; }
-  .intro h3 {
-    margin: 8px 0 6px;
-    font-size: 16.5px;
-    letter-spacing: -.3px;
-  }
-  .intro p {
-    margin: 0 0 8px;
-    font-size: 13px;
-    line-height: 1.65;
-    color: var(--ink-soft);
-  }
-  .intro .team-line {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 5px;
-    margin: 10px 0 0;
-  }
-  .intro .team-line span {
-    padding: 4px 9px;
-    font-size: 11.5px;
-    color: var(--ink-soft);
-    background: #f4f8fb;
-    border: 1px solid var(--line);
-    border-radius: 999px;
-  }
-  .intro .team-line span.gh { color: #1e40af; background: var(--blue-soft); border-color: #cfe0fb; }
-  .intro .hint {
-    padding: 9px 11px;
-    margin: 10px 0 0;
-    font-size: 12px;
-    line-height: 1.65;
-    color: #7a5b00;
-    background: var(--yellow-soft);
-    border: 1px solid #f8e7a1;
-    border-radius: 10px;
-  }
-  .intro-chips { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 10px; }
-  .intro-chips button {
-    padding: 6px 10px;
-    font-size: 11.5px;
-    color: var(--ink-soft);
-    cursor: pointer;
-    background: #f4f8fb;
-    border: 1px solid var(--line);
-    border-radius: 999px;
-  }
-  .intro-chips button:hover { background: #eaf2f8; }
+.day { display: flex; justify-content: center; margin: 6px 0 12px; }
+.day span {
+  background: rgba(0, 0, 0, .22); color: #fff; font-size: 11px; font-weight: 700;
+  padding: 4px 11px; border-radius: 999px; backdrop-filter: blur(2px);
+}
 
-  .day-divider {
-    display: flex;
-    gap: 10px;
-    align-items: center;
-    max-width: 520px;
-    margin: 10px auto 16px;
-    font-size: 11px;
-    color: #5b7386;
-  }
-  .day-divider::before,
-  .day-divider::after {
-    content: "";
-    flex: 1;
-    height: 1px;
-    background: rgba(255, 255, 255, .55);
-  }
-  .day-divider span {
-    padding: 3px 10px;
-    background: rgba(255, 255, 255, .5);
-    border-radius: 999px;
-  }
+.row { display: flex; margin: 9px 0; align-items: flex-start; gap: 7px; animation: pop .18s ease-out; }
+@keyframes pop { from { opacity: 0; transform: translateY(4px) } to { opacity: 1; transform: none } }
+.avatar {
+  width: 34px; height: 34px; border-radius: 12px; flex: 0 0 auto;
+  display: grid; place-items: center; color: #fff; font-weight: 800; font-size: 13px;
+  box-shadow: var(--shadow-1); margin-top: 15px; letter-spacing: -.5px;
+}
+.bcol { display: flex; flex-direction: column; gap: 3px; max-width: min(80%, 540px); min-width: 0; }
+.who { display: flex; align-items: center; gap: 5px; padding-left: 2px; }
+.who b { font-size: 11.5px; font-weight: 800; color: #33475b; letter-spacing: -.2px; }
+.chip {
+  font-size: 9.5px; font-weight: 800; letter-spacing: -.1px; border-radius: 5px;
+  padding: 1px 5px; line-height: 1.5;
+}
+.chip.demo { background: rgba(0,0,0,.10); color: #fff; }
+.line { display: flex; align-items: flex-end; gap: 5px; }
+.bubble {
+  background: var(--white); border-radius: 14px; border-top-left-radius: 5px;
+  padding: 9px 11px; font-size: 14.5px; line-height: 1.56; letter-spacing: -.1px;
+  box-shadow: var(--shadow-1); word-break: break-word; min-width: 0;
+}
+.bubble .md b { font-weight: 800; }
+.bubble .md code { background: #EFF2F5; border-radius: 4px; padding: 1px 4px; }
+.bubble .md a { text-decoration: underline; }
+.bubble.clamp { max-height: 210px; overflow: hidden; -webkit-mask-image: linear-gradient(180deg, #000 70%, transparent); mask-image: linear-gradient(180deg, #000 70%, transparent); }
+.time { font-size: 10.5px; color: #5b6b7b; white-space: nowrap; flex: 0 0 auto; padding-bottom: 2px; letter-spacing: -.2px; }
+.more {
+  align-self: flex-start; border: 0; background: rgba(255,255,255,.75);
+  color: #33475b; font-size: 11px; font-weight: 800; border-radius: 999px;
+  padding: 3px 9px; cursor: pointer; margin-top: 2px;
+}
 
-  .msg {
-    display: flex;
-    gap: 8px;
-    align-items: flex-start;
-    max-width: 980px;
-    margin: 0 auto 14px;
-    animation: pop .18s ease-out;
-  }
-  @keyframes pop {
-    from { opacity: 0; transform: translateY(4px); }
-    to { opacity: 1; transform: none; }
-  }
-  .msg.user { flex-direction: row-reverse; }
-  .avatar {
-    display: grid;
-    place-items: center;
-    flex: 0 0 auto;
-    width: 38px;
-    height: 38px;
-    font-size: 19px;
-    background: #fff;
-    border: 1px solid rgba(255, 255, 255, .75);
-    border-radius: 50%;
-    box-shadow: 0 1px 3px rgba(20, 40, 60, .12);
-  }
-  .msg.user .avatar {
-    font-size: 18px;
-    background: linear-gradient(160deg, #ffe98a, #e9b949);
-    border-color: #f3d267;
-  }
-  .stack { min-width: 0; max-width: min(680px, 80%); }
-  .msg.user .stack { display: flex; flex-direction: column; align-items: flex-end; }
-  .bubble {
-    padding: 9px 13px;
-    font-size: 14.5px;
-    line-height: 1.62;
-    color: var(--ink);
-    word-break: break-word;
-    overflow-wrap: anywhere;
-    background: #fff;
-    border-radius: 4px 16px 16px 16px;
-    box-shadow: var(--shadow);
-  }
-  .msg.user .bubble {
-    background: var(--yellow);
-    border-radius: 16px 4px 16px 16px;
-    box-shadow: 0 1px 2px rgba(120, 90, 0, .16);
-  }
-  .msg.gh .bubble { border: 1px solid #dbe7f3; }
-  .msg.gh .bubble::before {
-    content: "🐙 공용창";
-    display: block;
-    margin-bottom: 4px;
-    font-size: 9.5px;
-    font-weight: 800;
-    color: #1e40af;
-    letter-spacing: -.1px;
-  }
-  .bubble .md-h2,
-  .bubble .md-h3 {
-    margin: 8px 0 3px;
-    font-size: 14px;
-    font-weight: 800;
-  }
-  .bubble .md-h2:first-child,
-  .bubble .md-h3:first-child { margin-top: 0; }
-  .bubble .md-li { padding-left: 2px; margin: 1px 0; }
-  .bubble code {
-    padding: 1px 4px;
-    font-size: 12.5px;
-    background: #f1f5f9;
-    border-radius: 4px;
-  }
-  .bubble pre {
-    padding: 9px 10px;
-    margin: 7px 0;
-    overflow-x: auto;
-    font-size: 12px;
-    line-height: 1.55;
-    color: #e2e8f0;
-    background: #0f172a;
-    border-radius: 9px;
-    white-space: pre-wrap;
-  }
-  .bubble pre code { padding: 0; color: inherit; background: none; }
-  .bubble .mention {
-    padding: 0 2px;
-    font-weight: 700;
-    background: rgba(0, 0, 0, .07);
-    border-radius: 4px;
-  }
-  .msg-top {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 5px;
-    align-items: center;
-    margin: 0 0 5px;
-  }
-  .msg-top .name { font-size: 12.5px; font-weight: 800; letter-spacing: -.2px; }
-  .role-badge {
-    padding: 1px 7px;
-    font-size: 10px;
-    font-weight: 600;
-    color: var(--muted);
-    background: #f1f5f9;
-    border-radius: 999px;
-  }
-  .source {
-    padding: 1px 7px;
-    font-size: 9.5px;
-    font-weight: 800;
-    letter-spacing: -.1px;
-    border-radius: 999px;
-  }
-  .source.api { color: #15803d; background: var(--green-soft); }
-  .source.demo { color: #a16207; background: var(--amber-soft); border: 1px solid #fbe6ac; }
-  .source.gh { color: #1e40af; background: var(--blue-soft); }
-  .meta {
-    margin-top: 5px;
-    font-size: 10.5px;
-    color: #5b7285;
-  }
-  .msg.user .meta { text-align: right; }
-  .reply-quote {
-    display: -webkit-box;
-    padding: 5px 9px;
-    margin-bottom: 5px;
-    overflow: hidden;
-    font-size: 11.5px;
-    color: #5d6f80;
-    background: #f3f7fa;
-    border-left: 3px solid #cfdde8;
-    border-radius: 6px;
-    -webkit-line-clamp: 1;
-    -webkit-box-orient: vertical;
-  }
-  .notice {
-    max-width: 760px;
-    padding: 8px 12px;
-    margin: 0 auto 12px;
-    font-size: 11.5px;
-    line-height: 1.6;
-    color: #7a5b00;
-    background: #fffaea;
-    border: 1px solid #f7e6a8;
-    border-radius: 10px;
-    box-shadow: var(--shadow);
-  }
-  .typing .bubble {
-    display: flex;
-    gap: 5px;
-    align-items: center;
-    padding: 11px 14px;
-  }
-  .typing .tname { margin-right: 2px; font-size: 11.5px; color: var(--muted); }
-  .dots { display: inline-flex; gap: 3px; align-items: center; }
-  .dots i {
-    width: 6px; height: 6px;
-    background: #9db0c0;
-    border-radius: 50%;
-    animation: blink 1.1s infinite ease-in-out;
-  }
-  .dots i:nth-child(2) { animation-delay: .16s; }
-  .dots i:nth-child(3) { animation-delay: .32s; }
-  @keyframes blink {
-    0%, 70%, 100% { opacity: .3; transform: translateY(0); }
-    35% { opacity: 1; transform: translateY(-2px); }
-  }
+/* 대표(오른쪽 노란 말풍선) */
+.row.me { justify-content: flex-end; padding-left: 42px; }
+.row.me .bubble {
+  background: var(--kakao); color: #201f1b; border-radius: 14px; border-top-right-radius: 5px;
+  box-shadow: 0 1px 2px rgba(120, 100, 0, .18);
+}
+.row.me .time { color: #4e5b68; }
 
-  /* ============================================================
-     하단 입력 영역
-     ============================================================ */
-  .composer {
-    flex: 0 0 auto;
-    padding: 7px 12px calc(9px + env(safe-area-inset-bottom));
-    background: #fff;
-    border-top: 1px solid var(--line);
-  }
-  .quick-row,
-  .chip-row {
-    display: flex;
-    gap: 6px;
-    overflow-x: auto;
-    scrollbar-width: none;
-  }
-  .quick-row::-webkit-scrollbar,
-  .chip-row::-webkit-scrollbar { display: none; }
-  .quick-row { padding: 1px 0 6px; }
-  .quick {
-    flex: 0 0 auto;
-    padding: 6px 12px;
-    font-size: 12px;
-    color: var(--ink-soft);
-    white-space: nowrap;
-    cursor: pointer;
-    background: #fff;
-    border: 1px dashed #cfdae4;
-    border-radius: 999px;
-  }
-  .quick:hover { background: #f6fafd; border-style: solid; }
-  .chip-row { padding: 2px 0 8px; }
-  .chip {
-    flex: 0 0 auto;
-    padding: 7px 12px;
-    font-size: 12.5px;
-    color: var(--ink-soft);
-    white-space: nowrap;
-    cursor: pointer;
-    background: #fff;
-    border: 1px solid var(--line);
-    border-radius: 999px;
-  }
-  .chip:hover { background: #f6fafd; }
-  .chip.gh { border-color: #cfe0fb; background: #f5f9ff; color: #1e40af; }
-  .chip.active {
-    font-weight: 800;
-    color: #4a3a00;
-    background: var(--yellow-soft);
-    border-color: var(--yellow-line);
-  }
-  .input-row {
-    display: flex;
-    gap: 8px;
-    align-items: flex-end;
-    padding: 5px 5px 5px 10px;
-    background: #f3f7fa;
-    border: 1px solid var(--line);
-    border-radius: 18px;
-    transition: border-color .15s, background .15s;
-  }
-  .input-row:focus-within { background: #fff; border-color: #cfe0ec; }
-  .input-row textarea {
-    flex: 1 1 auto;
-    max-height: 132px;
-    padding: 9px 2px;
-    overflow-y: auto;
-    font: inherit;
-    font-size: 15px;
-    line-height: 1.5;
-    color: var(--ink);
-    background: transparent;
-    border: 0;
-    outline: none;
-    resize: none;
-  }
-  .input-row textarea::placeholder { color: #9aa9b8; }
-  .send {
-    display: grid;
-    place-items: center;
-    flex: 0 0 auto;
-    width: 42px; height: 42px;
-    font-size: 17px;
-    color: #4a3a00;
-    cursor: pointer;
-    background: var(--yellow);
-    border: 0;
-    border-radius: 14px;
-    transition: transform .1s, opacity .15s;
-  }
-  .send:hover { filter: brightness(.97); }
-  .send:active { transform: scale(.95); }
-  .send[disabled] { cursor: progress; opacity: .55; }
-  .input-foot {
-    display: flex;
-    gap: 8px;
-    justify-content: space-between;
-    padding: 5px 4px 0;
-    font-size: 10.5px;
-    color: #9aa9b8;
-  }
-  .input-foot span { overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+/* 시스템 안내(가운데) */
+.sys { display: flex; justify-content: center; margin: 10px 0; }
+.sys .md {
+  background: rgba(255,255,255,.55); color: #37474f; font-size: 12px; line-height: 1.6;
+  border-radius: 12px; padding: 8px 12px; max-width: 92%; text-align: center;
+  border: 1px solid rgba(255,255,255,.6);
+}
+.sys.warn .md { background: #FFF4E5; color: #7A2E0E; border-color: #FFD8A8; }
 
-  /* ============================================================
-     모달
-     ============================================================ */
-  .overlay {
-    position: fixed;
-    inset: 0;
-    z-index: 60;
-    display: none;
-    place-items: center;
-    padding: 16px;
-    background: rgba(13, 28, 42, .46);
-    backdrop-filter: blur(2px);
-  }
-  .overlay.open { display: grid; }
-  .modal {
-    width: min(600px, 100%);
-    max-height: 88dvh;
-    padding: 18px 18px 16px;
-    overflow-y: auto;
-    background: #fff;
-    border-radius: 18px;
-    box-shadow: 0 24px 60px rgba(10, 25, 40, .32);
-    animation: rise .2s ease-out;
-  }
-  @keyframes rise {
-    from { opacity: 0; transform: translateY(10px); }
-    to { opacity: 1; transform: none; }
-  }
-  .modal-head {
-    display: flex;
-    gap: 10px;
-    align-items: flex-start;
-    justify-content: space-between;
-    margin-bottom: 4px;
-  }
-  .modal-head h2 {
-    margin: 0;
-    font-size: 17px;
-    letter-spacing: -.35px;
-  }
-  .modal-head p {
-    margin: 5px 0 0;
-    font-size: 12px;
-    line-height: 1.6;
-    color: var(--muted);
-  }
-  .modal-close {
-    display: grid;
-    place-items: center;
-    flex: 0 0 auto;
-    width: 32px; height: 32px;
-    font-size: 15px;
-    color: var(--muted);
-    cursor: pointer;
-    background: #f4f7fa;
-    border: 0;
-    border-radius: 10px;
-  }
-  .provider-block {
-    padding: 12px 13px;
-    margin-top: 11px;
-    background: #fbfdff;
-    border: 1px solid var(--line);
-    border-radius: 13px;
-  }
-  .provider-top {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 6px;
-    align-items: center;
-  }
-  .provider-top .pname { font-size: 13.5px; font-weight: 800; }
-  .provider-top .pstate {
-    padding: 2px 7px;
-    font-size: 10px;
-    font-weight: 800;
-    border-radius: 999px;
-  }
-  .pstate.on { color: #15803d; background: var(--green-soft); }
-  .pstate.off { color: #a16207; background: var(--amber-soft); }
-  .provider-top .pwho {
-    margin-left: auto;
-    font-size: 10.5px;
-    color: var(--muted);
-  }
-  .field { margin-top: 9px; }
-  .field label {
-    display: block;
-    margin-bottom: 4px;
-    font-size: 11px;
-    font-weight: 700;
-    color: #64748b;
-  }
-  .key-wrap { display: flex; gap: 6px; }
-  .key-wrap input,
-  .field input[type="text"],
-  .field input[type="password"] {
-    width: 100%;
-    min-width: 0;
-    padding: 8px 10px;
-    font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
-    font-size: 12px;
-    color: var(--ink);
-    background: #fff;
-    border: 1px solid var(--line);
-    border-radius: 9px;
-    outline: none;
-  }
-  .field input:focus { border-color: #b9d3e6; box-shadow: 0 0 0 3px rgba(185, 211, 230, .28); }
-  .key-wrap button {
-    flex: 0 0 auto;
-    width: 38px;
-    font-size: 13px;
-    cursor: pointer;
-    background: #fff;
-    border: 1px solid var(--line);
-    border-radius: 9px;
-  }
-  .hint-line {
-    margin: 7px 0 0;
-    font-size: 11px;
-    line-height: 1.6;
-    color: var(--muted);
-  }
-  .hint-line a { color: #1d6fb8; text-decoration: none; }
-  .hint-line a:hover { text-decoration: underline; }
-  .hint-line code { padding: 1px 3px; font-size: 10.5px; background: #f1f5f9; border-radius: 3px; }
-  .mini-btn {
-    padding: 5px 9px;
-    font-size: 11px;
-    font-weight: 700;
-    color: var(--ink-soft);
-    cursor: pointer;
-    background: #fff;
-    border: 1px solid var(--line);
-    border-radius: 8px;
-  }
-  .mini-btn:hover { background: #f6f9fc; }
-  .modal-actions {
-    display: flex;
-    gap: 8px;
-    justify-content: flex-end;
-    margin-top: 15px;
-  }
-  .btn {
-    padding: 9px 15px;
-    font-size: 13px;
-    font-weight: 700;
-    color: var(--ink-soft);
-    cursor: pointer;
-    background: #fff;
-    border: 1px solid var(--line);
-    border-radius: 10px;
-  }
-  .btn:hover { background: #f6f9fc; }
-  .btn.primary {
-    color: #4a3a00;
-    background: var(--yellow);
-    border-color: var(--yellow-line);
-  }
-  .btn.primary:hover { filter: brightness(.97); }
-  .modal-note {
-    padding: 9px 11px;
-    margin-top: 12px;
-    font-size: 11px;
-    line-height: 1.65;
-    color: #7a5b00;
-    background: var(--yellow-soft);
-    border: 1px solid #f8e7a1;
-    border-radius: 10px;
-  }
-  .ls-reset {
-    width: 100%;
-    margin-top: 14px;
-    font-size: 11px;
-    color: #94a3b8;
-    text-align: center;
-    cursor: pointer;
-    background: none;
-    border: 0;
-  }
-  .ls-reset:hover { color: var(--red); }
+/* 입력 중 표시 */
+.typing .bubble { display: flex; align-items: center; gap: 4px; padding: 12px 14px; }
+.typing .d { width: 6px; height: 6px; border-radius: 50%; background: #98A2B3; animation: bob .9s infinite; }
+.typing .d:nth-child(2) { animation-delay: .15s; }
+.typing .d:nth-child(3) { animation-delay: .3s; }
+@keyframes bob { 0%,100% { transform: translateY(0); opacity: .45 } 50% { transform: translateY(-3px); opacity: 1 } }
 
-  /* 잔여 입력 모달 */
-  .usage-target {
-    display: flex;
-    gap: 8px;
-    align-items: center;
-    padding: 11px 13px;
-    margin-top: 10px;
-    background: #f7fafd;
-    border: 1px solid var(--line);
-    border-radius: 12px;
-  }
-  .usage-target .av {
-    display: grid;
-    place-items: center;
-    width: 34px; height: 34px;
-    font-size: 17px;
-    background: #fff;
-    border: 1px solid var(--line);
-    border-radius: 50%;
-  }
-  .usage-target .av-name { font-size: 13.5px; font-weight: 800; }
-  .usage-target .av-role { font-size: 11px; color: var(--muted); }
-  .big-num {
-    margin: 14px 0 4px;
-    font-size: 34px;
-    font-weight: 800;
-    letter-spacing: -1.5px;
-    text-align: center;
-  }
-  .big-num span { font-size: 16px; }
-  input[type="range"] {
-    width: 100%;
-    height: 26px;
-    margin: 2px 0 0;
-    accent-color: #f2c14e;
-  }
-  .preset-row {
-    display: flex;
-    gap: 6px;
-    margin-top: 6px;
-  }
-  .preset-row button {
-    flex: 1;
-    padding: 8px 4px;
-    font-size: 12px;
-    font-weight: 700;
-    color: var(--ink-soft);
-    cursor: pointer;
-    background: #f7fafd;
-    border: 1px solid var(--line);
-    border-radius: 9px;
-  }
-  .preset-row button:hover { background: var(--yellow-soft); border-color: var(--yellow-line); }
+/* 새 메시지 버튼 */
+.jump {
+  position: absolute; left: 50%; transform: translateX(-50%);
+  bottom: 150px; z-index: 7;
+  background: rgba(25,22,0,.85); color: #fff; border: 0; border-radius: 999px;
+  padding: 7px 14px; font-size: 12px; font-weight: 800; cursor: pointer;
+  box-shadow: var(--shadow-2);
+}
 
-  /* 토스트 */
-  .toast {
-    position: fixed;
-    bottom: 96px;
-    left: 50%;
-    z-index: 80;
-    max-width: min(460px, calc(100% - 32px));
-    padding: 10px 14px;
-    font-size: 12.5px;
-    line-height: 1.5;
-    color: #fff;
-    background: rgba(23, 32, 42, .92);
-    border-radius: 10px;
-    transform: translate(-50%, 8px);
-    opacity: 0;
-    pointer-events: none;
-    transition: opacity .2s, transform .2s;
-  }
-  .toast.show { opacity: 1; transform: translate(-50%, 0); }
+/* ---------- 입력창 ---------- */
+.composer {
+  flex: 0 0 auto; background: var(--white); border-top: 1px solid var(--line);
+  padding: 8px 10px 6px;
+  padding-bottom: max(6px, env(safe-area-inset-bottom));
+  z-index: 6;
+}
+.tags { display: flex; gap: 6px; overflow-x: auto; padding-bottom: 7px; scrollbar-width: none; }
+.tags::-webkit-scrollbar { display: none; }
+.tag {
+  flex: 0 0 auto; border: 1px solid #E1E6EA; background: #F7F9FA; color: #33475b;
+  border-radius: 999px; padding: 5px 10px; font-size: 11.5px; font-weight: 800;
+  cursor: pointer; white-space: nowrap; letter-spacing: -.2px;
+}
+.tag:hover { background: #FFF8D6; border-color: #F2D873; }
+.inputbar { display: flex; align-items: flex-end; gap: 7px; }
+#input {
+  flex: 1 1 auto; min-width: 0; resize: none; border: 0; outline: none;
+  background: #F2F4F6; border-radius: 18px; padding: 10px 14px;
+  font-size: 16px; line-height: 1.45; color: var(--ink);
+  max-height: 132px; min-height: 42px; letter-spacing: -.2px;
+}
+#input::placeholder { color: #9AA6B2; font-size: 13.5px; }
+.send {
+  flex: 0 0 auto; width: 42px; height: 42px; border-radius: 50%; border: 0;
+  background: var(--kakao); color: #2b2500; font-size: 17px; font-weight: 900;
+  cursor: pointer; display: grid; place-items: center; box-shadow: 0 1px 3px rgba(120,100,0,.25);
+  transition: transform .1s, opacity .15s;
+}
+.send:active { transform: scale(.94); }
+.send[disabled] { opacity: .45; cursor: default; }
+.under { display: flex; align-items: center; gap: 8px; padding: 6px 4px 0; min-height: 20px; }
+.runstate { font-size: 11px; color: var(--sub); font-weight: 700; letter-spacing: -.2px; }
+.runstate.on { color: #05603A; }
+.runstate .spin {
+  display: inline-block; width: 9px; height: 9px; border-radius: 50%;
+  border: 2px solid #12B76A; border-right-color: transparent; margin-right: 5px;
+  vertical-align: -1px; animation: spin .8s linear infinite;
+}
+@keyframes spin { to { transform: rotate(360deg) } }
+.stop {
+  border: 1px solid #FDA29B; background: #FEF3F2; color: #B42318;
+  border-radius: 999px; padding: 3px 9px; font-size: 11px; font-weight: 800; cursor: pointer;
+}
+.hint { margin-left: auto; font-size: 10.5px; color: #98A2B3; white-space: nowrap; }
+.mode-chip { font-size: 10px; font-weight: 800; color: #6b7684; background: #F2F4F7; border-radius: 999px; padding: 2px 7px; }
 
-  /* ============================================================
-     반응형
-     ============================================================ */
-  @media (max-width: 720px) {
-    .app { max-width: 100%; box-shadow: none; }
-    .topbar { padding: 8px 9px; gap: 7px; }
-    .icon-btn { width: 36px; height: 36px; border-radius: 11px; }
-    .title-wrap h1 { font-size: 14.5px; }
-    .online-pill { height: 36px; padding: 0 8px; font-size: 12px; }
-    .online-pill .label { display: none; }
-    .dash { max-height: 52dvh; scrollbar-gutter: stable; }
-    .dash-inner { padding: 10px 10px 11px; }
-    .cards { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
-    .emp-card { padding: 9px 8px 8px; border-radius: 12px; }
-    .emp-card .av { width: 30px; height: 30px; font-size: 15px; border-radius: 10px; }
-    .who-wrap .who { font-size: 12px; }
-    .who-wrap .role { font-size: 9.5px; }
-    .tag { padding: 1px 5px; font-size: 8.5px; }
-    .state { padding: 2px 6px; font-size: 9.5px; }
-    .last { font-size: 9px; }
-    /* 모바일: 카드를 납작하게 — 6명이 한 화면에 들어오게 */
-    .mini, .mini-note, .dash-note { display: none; }
-    .q-mini { display: inline; }
-    .state-row { margin-top: 7px; gap: 4px; }
-    .ghost-btn { padding: 5px 6px; font-size: 10px; margin-top: 6px; }
-    .emp-card { padding: 9px 8px 8px; }
-    .chat { padding: 12px 9px 6px; }
-    .stack { max-width: 84%; }
-    .bubble { font-size: 14px; }
-    .avatar { width: 34px; height: 34px; font-size: 17px; }
-    .composer { padding: 6px 9px calc(8px + env(safe-area-inset-bottom)); }
-    .input-foot .tip { display: none; }
-    .modal { padding: 16px 14px 14px; }
-    .dash-note { font-size: 10px; }
-  }
-  @media (max-width: 380px) {
-    .cards { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 6px; }
-    .chip { padding: 6px 10px; font-size: 12px; }
-    .state-row { flex-direction: column; align-items: flex-start; gap: 3px; }
-  }
-  @media (prefers-reduced-motion: reduce) {
-    *, *::before, *::after { animation-duration: .001ms !important; transition-duration: .001ms !important; }
-  }
+/* ---------- 모달(설정·포지션) ---------- */
+.modal {
+  position: fixed; inset: 0; z-index: 50; display: flex; align-items: flex-end;
+  justify-content: center; background: rgba(15, 23, 32, .45); backdrop-filter: blur(2px);
+  animation: fade .15s ease-out;
+}
+@keyframes fade { from { opacity: 0 } to { opacity: 1 } }
+.sheet {
+  width: 100%; max-width: 720px; max-height: 92vh; max-height: 92dvh;
+  background: #F7F8FA; border-radius: 20px 20px 0 0; display: flex; flex-direction: column;
+  box-shadow: 0 -10px 40px rgba(0,0,0,.2); animation: up .2s ease-out;
+}
+@keyframes up { from { transform: translateY(18px); opacity: .6 } to { transform: none; opacity: 1 } }
+.sheet-hd {
+  flex: 0 0 auto; display: flex; align-items: center; gap: 8px;
+  padding: 14px 16px 12px; border-bottom: 1px solid var(--line);
+  background: #fff; border-radius: 20px 20px 0 0;
+}
+.sheet-hd b { font-size: 15.5px; letter-spacing: -.3px; }
+.sheet-hd .x {
+  margin-left: auto; border: 0; background: #F2F4F7; width: 30px; height: 30px;
+  border-radius: 50%; font-size: 14px; cursor: pointer; color: #475467;
+}
+.sheet-body { flex: 1 1 auto; overflow-y: auto; padding: 12px 14px 22px; -webkit-overflow-scrolling: touch; }
+.sheet-ft {
+  flex: 0 0 auto; padding: 10px 14px; padding-bottom: max(10px, env(safe-area-inset-bottom));
+  background: #fff; border-top: 1px solid var(--line); display: flex; gap: 8px;
+}
+.card { background: #fff; border: 1px solid var(--line); border-radius: 14px; padding: 13px 13px 14px; margin-bottom: 11px; }
+.card h3 { margin: 0 0 8px; font-size: 13.5px; font-weight: 800; letter-spacing: -.3px; }
+.help { margin: 6px 0 10px; font-size: 11.5px; line-height: 1.65; color: #667085; letter-spacing: -.1px; }
+.help b { color: #344054; }
+label { display: block; font-size: 11.5px; font-weight: 800; color: #344054; margin: 9px 0 4px; letter-spacing: -.2px; }
+label .sub { font-weight: 600; color: #98A2B3; }
+input[type=text], input[type=password], select {
+  width: 100%; border: 1px solid #D0D5DD; border-radius: 10px; padding: 9px 11px;
+  font-size: 14px; color: var(--ink); background: #fff; outline: none;
+}
+input:focus, select:focus { border-color: #F2C200; box-shadow: 0 0 0 3px rgba(254,229,0,.35); }
+.pw { position: relative; display: block; }
+.pw input { padding-right: 40px; }
+.pw .eye {
+  position: absolute; right: 6px; top: 50%; transform: translateY(-50%);
+  border: 0; background: transparent; font-size: 15px; cursor: pointer; padding: 4px;
+}
+.check { display: flex; align-items: center; gap: 8px; font-size: 12.5px; font-weight: 700; color: #344054; margin: 10px 0 2px; }
+.check input { width: 17px; height: 17px; accent-color: #F2C200; }
+.btnrow { display: flex; flex-wrap: wrap; gap: 7px; margin-top: 10px; }
+.btn {
+  border: 1px solid #D0D5DD; background: #fff; color: #344054; border-radius: 10px;
+  padding: 8px 12px; font-size: 12px; font-weight: 800; cursor: pointer;
+}
+.btn:hover { background: #F9FAFB; }
+.btn.primary { background: var(--kakao); border-color: #F2C200; color: #2b2500; }
+.btn.danger { background: #FEF3F2; border-color: #FDA29B; color: #B42318; }
+.btn.block { flex: 1 1 auto; }
+.note { font-size: 11px; color: #98A2B3; line-height: 1.6; margin: 8px 0 0; }
+.out { margin-top: 9px; font-size: 11.5px; line-height: 1.6; padding: 8px 10px; border-radius: 9px; background: #F2F4F7; color: #475467; white-space: pre-wrap; word-break: break-word; }
+.out.ok { background: #ECFDF3; color: #05603A; }
+.out.bad { background: #FEF3F2; color: #B42318; }
+.prov-row { display: grid; grid-template-columns: 1fr 1fr; gap: 7px; align-items: center; margin: 7px 0; }
+.prov-row .nm { font-size: 12px; font-weight: 800; color: #344054; display: flex; align-items: center; gap: 6px; }
+.prov-row .nm i { width: 16px; height: 16px; border-radius: 5px; display: inline-grid; place-items: center; color: #fff; font-size: 9.5px; font-style: normal; font-weight: 800; }
+.prov-row select { padding: 6px 8px; font-size: 12px; }
+
+/* 포지션 목록 */
+.pos-item { display: flex; gap: 10px; padding: 11px 0; border-bottom: 1px solid var(--line-2); }
+.pos-item:last-child { border-bottom: 0; }
+.pos-av { width: 34px; height: 34px; border-radius: 11px; display: grid; place-items: center; color: #fff; font-weight: 800; font-size: 13px; flex: 0 0 auto; }
+.pos-tx { flex: 1 1 auto; min-width: 0; }
+.pos-tx b { font-size: 12.5px; letter-spacing: -.2px; }
+.pos-tx p { margin: 3px 0 0; font-size: 11.5px; line-height: 1.6; color: #667085; }
+.pos-tx .meta { margin-top: 4px; font-size: 10.5px; color: #98A2B3; }
+.pos-call { align-self: center; border: 1px solid #E1E6EA; background: #F9FAFB; border-radius: 999px; padding: 5px 10px; font-size: 11px; font-weight: 800; color: #344054; cursor: pointer; flex: 0 0 auto; }
+
+.toast {
+  position: fixed; left: 50%; bottom: 96px; transform: translateX(-50%);
+  background: rgba(20,20,20,.9); color: #fff; font-size: 12px; font-weight: 700;
+  padding: 9px 14px; border-radius: 999px; z-index: 90; pointer-events: none;
+  animation: fade .15s ease-out; max-width: 90vw; text-align: center;
+}
+[hidden] { display: none !important; }
 </style>
 </head>
 <body>
-<div class="app">
-  <!-- ================= 상단 헤더 ================= -->
-  <header class="topbar">
-    <button class="icon-btn" id="menuBtn" aria-label="메뉴 열기" aria-expanded="false">☰</button>
-    <div class="title-wrap">
-      <h1>🏢 1인 기업 사이버 오피스</h1>
-      <p class="room-meta" id="roomMeta">직원 6명 · 깃허브 공용창 대기</p>
-    </div>
-    <div class="top-actions">
-      <button class="online-pill" id="onlineBtn" title="직원 6명 보기">
-        <span class="live-dot"></span><span class="label">직원</span><b id="onlineCount">6</b>
-      </button>
-      <button class="icon-btn is-on" id="dashBtn" aria-label="사이버 오피스 접기·펼치기" aria-expanded="true" title="사이버 오피스">🏢</button>
-      <button class="icon-btn" id="settingsBtn" aria-label="연결 설정" title="연결 설정 (API 키·GitHub)">⚙️</button>
-    </div>
 
-    <!-- ☰ 메뉴 -->
-    <div class="menu-pop" id="menuPop" hidden>
-      <button data-menu="pull">🐙 공용 소통창 새로고침</button>
-      <button data-menu="export">💾 대화 내보내기 (.md)</button>
-      <button data-menu="help">❓ 사용 안내</button>
-      <hr />
-      <button data-menu="settings">⚙️ 연결 설정</button>
-      <button data-menu="reset">🧹 대화 초기화</button>
+<div class="app" id="app">
+  <!-- ===== 상단 노란 헤더 ===== -->
+  <header class="hd">
+    <div class="hd-row">
+      <div class="brand">
+        <span class="ico">💬</span>
+        <h1>AI 소통창</h1>
+      </div>
+      <div class="hd-side">
+        <button class="conn local" id="conn" title="연결 상태 — 누르면 설정이 열립니다">
+          <span class="dot"></span><span id="connTx">로컬 저장</span>
+        </button>
+        <button class="hd-btn" id="btnMembers">👥 포지션</button>
+        <button class="hd-btn" id="btnSettings">🔑 설정</button>
+      </div>
     </div>
+    <!-- 포지션 배지 바 -->
+    <div class="members" id="members" aria-label="포지션과 현재 상태"></div>
   </header>
 
-  <!-- ================= 사이버 오피스 ================= -->
-  <section class="dash" id="dash" aria-label="사이버 오피스 직원 현황">
-    <div class="dash-inner">
-      <div class="dash-head">
-        <div>
-          <h2>🏢 사이버 오피스 <span class="tag" id="dashCount">6명</span></h2>
-          <p class="dash-sub" id="dashSummary">
-            <span>🟢 대기 <b>6</b></span><span>🟡 작업 <b>0</b></span><span>✅ 보고 <b>0</b></span>
-          </p>
-        </div>
-        <div class="dash-actions">
-          <button id="pullBtn" title="깃허브 공용창 새로고침" aria-label="공용창 새로고침">⟳</button>
-          <button id="autoBtn" class="is-on" title="20초마다 자동 새로고침" aria-label="자동 새로고침 켜기·끄기">🔄</button>
-          <button id="dashClose" title="오피스 접기" aria-label="오피스 접기">✕</button>
-        </div>
-      </div>
-      <div class="sync-line" id="syncLine"><span class="sync-dot"></span><span id="syncText">🐙 공용 소통창 · 아직 읽지 않음</span></div>
-      <div class="cards" id="cards"></div>
-      <p class="dash-note">
-        <b>피클 팀</b>(방카르 1·2·3)은 GitHub <code>office-messages.json</code> 한 파일로 움직입니다 — 여기서 지시하면 파일에 커밋되고,
-        피클이 보고를 남기면 자동으로 들어옵니다(⚙️ GitHub PAT 필요). <b>외부 AI 팀</b>(GPT·클로드·제미나이)은 이 브라우저에서 바로 호출합니다(키 없으면 데모).
-      </p>
-    </div>
-  </section>
+  <!-- ===== 채팅 타임라인 ===== -->
+  <main class="timeline" id="timeline" aria-live="polite"></main>
+  <button class="jump" id="jump" hidden>새 메시지 ↓</button>
 
-  <!-- ================= 채팅 ================= -->
-  <main class="chat" id="chat" aria-live="polite">
-    <div class="intro" id="intro">
-      <div class="intro-emoji">🏢</div>
-      <h3>직원 6명이 출근했습니다</h3>
-      <p>하고 싶은 일을 그냥 적으면 담당자에게 갑니다. <b>@전체</b>를 붙이면 연결된 직원들이 각자의 관점으로 차례로 답합니다.</p>
-      <div class="team-line">
-        <span class="gh">🐙 @방카르1 팀장·실행</span>
-        <span class="gh">🐙 @방카르2 리서처</span>
-        <span class="gh">🐙 @방카르3 마케터</span>
-        <span>🧠 @GPT 사업성</span>
-        <span>✍️ @클로드 카피·문서</span>
-        <span>✨ @제미나이 초안</span>
-      </div>
-      <div class="intro-chips" id="introChips">
-        <button data-fill="@전체 몽골 중고차 수출, 지금 시작해도 돈이 될까?">@전체 사업성 검토</button>
-        <button data-fill="@방카르2 스레드에서 팔 만한 디지털 상품 단가 조사해줘">@방카르2 단가 조사</button>
-        <button data-fill="@클로드 내 사업 이야기로 제안서 목차랑 카피 3개 써줘">@클로드 카피 3개</button>
-        <button data-fill="@제미나이 30만원으로 시작할 수 있는 부업 아이디어 10개">@제미나이 아이디어</button>
-      </div>
-      <p class="hint">
-        <b>피클 팀</b>은 ⚙️에 GitHub PAT를 넣으면 <code>office-messages.json</code>에 지시가 실제로 커밋됩니다.
-        <b>외부 AI</b>는 API 키가 없어도 <b>데모</b>로 연습할 수 있어요(답변마다 실제/데모 라벨).
-      </p>
-    </div>
-
-    <div id="messages"></div>
-    <div id="typing"></div>
-  </main>
-
-  <!-- ================= 입력 ================= -->
+  <!-- ===== 입력창 ===== -->
   <footer class="composer">
-    <div class="quick-row">
-      <button class="quick" data-quick="summary">🗒️ 회의 정리</button>
-      <button class="quick" data-quick="todo">✅ 할 일 뽑기</button>
-      <button class="quick" data-quick="draft">✍️ 초안 쓰기</button>
+    <div class="tags" id="tags">
+      <button class="tag" data-tag="@전체회의">@전체회의</button>
+      <button class="tag" data-tag="@현황보고">@현황보고</button>
+      <button class="tag" data-tag="@기획">@기획</button>
+      <button class="tag" data-tag="@개발">@개발</button>
+      <button class="tag" data-tag="@마케팅">@마케팅</button>
+      <button class="tag" data-tag="@검증">@검증</button>
     </div>
-    <div class="chip-row" id="chipRow">
-      <button class="chip" data-mention="전체">@전체</button>
-      <button class="chip gh" data-mention="방카르1">@방카르1</button>
-      <button class="chip gh" data-mention="방카르2">@방카르2</button>
-      <button class="chip gh" data-mention="방카르3">@방카르3</button>
-      <button class="chip" data-mention="GPT">@GPT</button>
-      <button class="chip" data-mention="클로드">@클로드</button>
-      <button class="chip" data-mention="제미나이">@제미나이</button>
+    <div class="inputbar">
+      <textarea id="input" rows="1" placeholder="메시지를 입력하세요 (Enter 전송 · Shift+Enter 줄바꿈)" aria-label="메시지 입력"></textarea>
+      <button class="send" id="btnSend" aria-label="전송">↑</button>
     </div>
-    <div class="input-row">
-      <textarea id="input" rows="1" placeholder="지시 입력… (@멘션으로 직원 지정)" aria-label="지시 입력"></textarea>
-      <button class="send" id="sendBtn" aria-label="보내기" title="보내기">➤</button>
-    </div>
-    <div class="input-foot">
-      <span class="tip">Enter 전송 · Shift+Enter 줄바꿈</span>
-      <span id="modeLabel">데모 모드</span>
+    <div class="under">
+      <span class="runstate" id="runState">대기 중</span>
+      <button class="stop" id="btnStop" hidden>■ 회의 중지</button>
+      <span class="mode-chip" id="modeChip" hidden>데모 모드</span>
+      <span class="hint">Enter 전송 · Shift+Enter 줄바꿈</span>
     </div>
   </footer>
 </div>
 
-<!-- ================= 연결 설정 모달 ================= -->
-<div class="overlay" id="settingsOverlay" role="dialog" aria-modal="true" aria-labelledby="settingsTitle">
-  <div class="modal">
-    <div class="modal-head">
-      <div>
-        <h2 id="settingsTitle">⚙️ 연결 설정</h2>
-        <p>키를 넣은 직원은 실제 AI로, GitHub PAT를 넣으면 피클 팀이 실제로 움직입니다. 모든 값은 <b>이 브라우저(localStorage)</b>에만 저장되고, 답변을 만들 때 해당 제공사로만 전송됩니다. 따로 만든 서버는 없습니다.</p>
-      </div>
-      <button class="modal-close" data-close="settingsOverlay" aria-label="닫기">✕</button>
-    </div>
-    <div id="providerForms"></div>
-    <div class="modal-note">
-      무료 등급은 분당·일일 한도가 있습니다. 한도를 넘으면 잠시 뒤 다시 시도하거나 데모로 확인하세요.
-      공용 PC에서는 키를 저장하지 마세요. GitHub PAT는 <b>이 저장소의 Contents 쓰기</b>만 주는 토큰을 권장합니다.
-    </div>
-    <div class="modal-actions">
-      <button class="btn" data-close="settingsOverlay">닫기</button>
-      <button class="btn primary" id="saveKeysBtn">저장하기</button>
-    </div>
-    <button class="ls-reset" id="wipeBtn">저장된 키·대화·사용량 모두 지우기</button>
+<!-- ===== 포지션 모달 ===== -->
+<div class="modal" id="modalPositions" hidden>
+  <div class="sheet" role="dialog" aria-modal="true" aria-label="포지션">
+    <div class="sheet-hd"><b>👥 포지션 (AI 직원 6명)</b><button class="x" data-close="modalPositions">✕</button></div>
+    <div class="sheet-body" id="posList"></div>
   </div>
 </div>
 
-<!-- ================= 잔여 입력 모달 ================= -->
-<div class="overlay" id="usageOverlay" role="dialog" aria-modal="true" aria-labelledby="usageTitle">
-  <div class="modal" style="width:min(430px,100%)">
-    <div class="modal-head">
-      <div>
-        <h2 id="usageTitle">잔여 한도</h2>
-        <p>제공사 대시보드에 보이는 남은 양을 그대로 옮겨 적으면 됩니다. 여기 적은 값은 이 브라우저에만 저장돼요.</p>
-      </div>
-      <button class="modal-close" data-close="usageOverlay" aria-label="닫기">✕</button>
+<!-- ===== 설정 모달 ===== -->
+<div class="modal" id="modalSettings" hidden>
+  <div class="sheet" role="dialog" aria-modal="true" aria-label="설정">
+    <div class="sheet-hd"><b>🔑 설정</b><button class="x" data-close="modalSettings">✕</button></div>
+    <div class="sheet-body">
+
+      <section class="card">
+        <h3>1. PC·폰이 같은 방을 보게 하기 (GitHub 공용 파일)</h3>
+        <p class="help">
+          카톡방을 PC와 폰이 똑같이 보려면 <b>공용 칠판</b>이 하나 필요합니다. 이 앱은 깃허브 저장소 안의
+          <code>office-messages.json</code> 파일을 칠판으로 씁니다. <b>10초마다</b> 칠판을 읽고, 새 메시지를 칠판에 적습니다.
+          칠판에 글을 쓰려면 <b>PAT</b>(개인 액세스 토큰 = 내 깃허브에 글을 쓸 수 있게 해주는 비밀번호 같은 열쇠)가 필요합니다.
+          <b>PAT가 없으면</b> 이 브라우저(기기)에만 대화가 저장됩니다.
+        </p>
+        <label>GitHub PAT <span class="sub">(없으면 이 기기에만 저장)</span>
+          <span class="pw">
+            <input id="fPat" type="password" autocomplete="off" spellcheck="false" placeholder="ghp_... 또는 github_pat_..." />
+            <button type="button" class="eye" data-eye="fPat" aria-label="토큰 보기">👁</button>
+          </span>
+        </label>
+        <p class="note">
+          발급 방법: <a href="https://github.com/settings/tokens" target="_blank" rel="noopener">github.com/settings/tokens</a>
+          → <b>Generate new token (classic)</b>(새 토큰 만들기) → 이름 아무거나 → <b>repo</b> 칸 체크(저장소 읽기·쓰기 허용)
+          → 맨 아래 <b>Generate token</b>(토큰 만들기) → 나온 <code>ghp_...</code>를 복사해 위에 붙여넣기.
+        </p>
+        <label>저장소 (owner/repo)</label>
+        <input id="fRepo" type="text" spellcheck="false" placeholder="bjyoutube/ai-meeting-room" />
+        <label>공용 파일 경로</label>
+        <input id="fPath" type="text" spellcheck="false" placeholder="office-messages.json" />
+        <label class="check"><input id="fAuto" type="checkbox" /> 10초마다 자동으로 확인 (끄면 ‘지금 동기화’로만 맞춥니다)</label>
+        <div class="btnrow">
+          <button class="btn" id="btnTest">연결 테스트</button>
+          <button class="btn" id="btnSyncNow">지금 동기화</button>
+        </div>
+        <div class="out" id="testOut" hidden></div>
+      </section>
+
+      <section class="card">
+        <h3>2. AI 직원 연결 (무료 API 키)</h3>
+        <p class="help">
+          <b>API 키</b>는 AI 회사가 발급하는 ‘이용증’입니다. 키를 넣으면 각 포지션이 <b>진짜 AI</b>로 릴레이 회의를 합니다.
+          키가 없거나 한도를 다 쓰면 <b>데모 모드</b>(정해진 예시 대화로 회의 흐름만 보여주는 연습 모드)로 돌아갑니다.
+          키는 <b>이 브라우저(localStorage)</b>에만 저장되고, 답변을 만들 때 해당 AI 회사로만 전송됩니다.
+        </p>
+        <label>제미나이(Gemini) API 키 <span class="sub">— Google AI Studio, 무료</span>
+          <span class="pw">
+            <input id="fGem" type="password" autocomplete="off" spellcheck="false" placeholder="AIza..." />
+            <button type="button" class="eye" data-eye="fGem" aria-label="키 보기">👁</button>
+          </span>
+        </label>
+        <p class="note">발급: <a href="https://aistudio.google.com/app/apikey" target="_blank" rel="noopener">aistudio.google.com/app/apikey</a> → <b>Create API key</b>(API 키 만들기) → 복사.</p>
+        <label>제미나이 모델명 (비워두면 기본값)</label>
+        <input id="fGemModel" type="text" spellcheck="false" list="gemModels" placeholder="gemini-2.5-flash" />
+        <datalist id="gemModels">
+          <option value="gemini-2.5-flash"></option>
+          <option value="gemini-2.5-pro"></option>
+          <option value="gemini-2.0-flash"></option>
+          <option value="gemini-2.0-flash-lite"></option>
+        </datalist>
+
+        <label>오픈라우터(OpenRouter) API 키 <span class="sub">— 여러 회사 AI를 한 키로</span>
+          <span class="pw">
+            <input id="fOr" type="password" autocomplete="off" spellcheck="false" placeholder="sk-or-v1-..." />
+            <button type="button" class="eye" data-eye="fOr" aria-label="키 보기">👁</button>
+          </span>
+        </label>
+        <p class="note">발급: <a href="https://openrouter.ai/keys" target="_blank" rel="noopener">openrouter.ai/keys</a> → <b>Create Key</b>(키 만들기). 모델 이름 끝에 <code>:free</code>가 붙은 것을 쓰면 무료입니다.</p>
+        <label>오픈라우터 모델명</label>
+        <input id="fOrModel" type="text" spellcheck="false" list="orModels" placeholder="meta-llama/llama-3.3-70b-instruct:free" />
+        <datalist id="orModels">
+          <option value="meta-llama/llama-3.3-70b-instruct:free"></option>
+          <option value="deepseek/deepseek-r1:free"></option>
+          <option value="google/gemini-2.0-flash-exp:free"></option>
+          <option value="qwen/qwen-2.5-72b-instruct:free"></option>
+        </datalist>
+        <p class="note">※ 무료 모델 이름은 자주 바뀝니다. 오류가 나면 <a href="https://openrouter.ai/models?max_price=0" target="_blank" rel="noopener">무료 모델 목록</a>에서 지금 되는 이름으로 바꿔 주세요.</p>
+      </section>
+
+      <section class="card">
+        <h3>3. 포지션별로 어느 AI가 답할지</h3>
+        <p class="help">‘자동’은 키가 있는 쪽을 씁니다. 포지션 이름(GPT·클로드·제미나이)은 <b>역할 별명</b>이고, 실제 모델은 여기서 정합니다.</p>
+        <div id="posProviders"></div>
+      </section>
+
+      <section class="card">
+        <h3>4. 대화 관리</h3>
+        <p class="help">대화를 지우면 <b>이 기기</b>와 <b>GitHub 공용 파일</b>이 함께 비워집니다(PC·폰 모두에서 사라집니다).</p>
+        <div class="btnrow">
+          <button class="btn danger" id="btnClear">대화 모두 지우기</button>
+          <button class="btn danger" id="btnWipe">저장된 키 모두 삭제</button>
+        </div>
+        <p class="note" id="storeNote"></p>
+      </section>
+
     </div>
-    <div class="usage-target" id="usageTarget"></div>
-    <div class="big-num"><span id="usageNum">100</span><span>%</span></div>
-    <input type="range" id="usageRange" min="0" max="100" step="1" value="100" aria-label="잔여 비율" />
-    <div class="preset-row">
-      <button data-preset="100">가득 참 (100%)</button>
-      <button data-preset="50">절반 (50%)</button>
-      <button data-preset="10">거의 없음 (10%)</button>
-    </div>
-    <div class="modal-actions">
-      <button class="btn" data-close="usageOverlay">취소</button>
-      <button class="btn primary" id="saveUsageBtn">적용</button>
+    <div class="sheet-ft">
+      <button class="btn primary block" id="btnSave">저장하고 닫기</button>
+      <button class="btn" data-close="modalSettings">닫기</button>
     </div>
   </div>
 </div>
-
-<!-- ================= 도움말 모달 ================= -->
-<div class="overlay" id="helpOverlay" role="dialog" aria-modal="true" aria-labelledby="helpTitle">
-  <div class="modal">
-    <div class="modal-head">
-      <div>
-        <h2 id="helpTitle">❓ 사용 안내</h2>
-        <p>처음 쓰신다면 이 다섯 가지만 기억하면 됩니다.</p>
-      </div>
-      <button class="modal-close" data-close="helpOverlay" aria-label="닫기">✕</button>
-    </div>
-    <div class="provider-block">
-      <p class="hint-line" style="margin-top:0"><b>1. 그냥 말하기</b><br />“몽골 중고차 수출 아이디어 검증해줘”처럼 평소 말투로 적으면 담당자에게 갑니다(공용창이 연결돼 있으면 팀장 <b>@방카르1</b>, 아니면 <b>@GPT</b>).</p>
-      <p class="hint-line"><b>2. @로 지목하기</b><br /><b>@전체</b>면 연결된 직원이 차례로, <b>@방카르2</b>처럼 한 명만 찍으면 그 직원만 답합니다. 아래 칩을 눌러도 입력창에 들어가요.</p>
-      <p class="hint-line"><b>3. 두 팀의 차이</b><br /><b>피클 팀(방카르 1·2·3)</b>은 GitHub 공용 파일에 지시를 남기고, 피클이 일을 마치면 보고가 파일에 쌓입니다. <b>외부 AI(GPT·클로드·제미나이)</b>는 이 화면에서 바로 답합니다.</p>
-      <p class="hint-line"><b>4. 진짜로 쓰기</b><br />⚙️에서 API 키(외부 AI) 또는 GitHub PAT(피클 팀)를 넣으세요. 답변 오른쪽 위 라벨로 실제/데모를 구분할 수 있습니다.</p>
-      <p class="hint-line"><b>5. 퀵 버튼</b><br />회의 정리(지금까지 요약) · 할 일 뽑기(실행 목록) · 초안 쓰기(홍보 문구)를 한 번에 시킬 수 있습니다.</p>
-      <p class="hint-line"><b>기록</b><br />대화·키·사용량은 이 브라우저에, 공용 보고는 GitHub 파일에 남습니다. ☰ → 대화 내보내기로 파일로 보관할 수 있습니다.</p>
-    </div>
-    <div class="modal-actions">
-      <button class="btn primary" data-close="helpOverlay">알겠습니다</button>
-    </div>
-  </div>
-</div>
-
-<div class="toast" id="toast" role="status" aria-live="polite"></div>
 
 <script>
+/* ================================================================
+   AI 소통창 — 카톡형 AI 직원 단톡방
+   구성: ⑴ 저장 ⑵ GitHub 공용 파일 동기화 ⑶ AI 호출 ⑷ 릴레이 회의 ⑸ 화면
+   ================================================================ */
 (function () {
   'use strict';
 
-  /* ============================================================
-     1. 직원 6명 (피클 팀 3 + 외부 AI 3)
-     ============================================================ */
-  var TEAM = [
-    {
-      id: 'b1', name: '방카르1', role: '팀장 · 실행/총괄', emoji: '🧑‍💼',
-      kind: 'github', handle: 'bangkar1', person: '실행과 총괄을 맡는 팀장',
-      color: '#1d4ed8', bg: '#e8efff',
-      persona: '일을 쪼개 순서를 정하고, 누가 무엇을 언제까지 할지 정리하는 실행 팀장'
-    },
-    {
-      id: 'b2', name: '방카르2', role: '리서처 · 시장조사', emoji: '🔬',
-      kind: 'github', handle: 'bangkar2', person: '시장을 조사하는 리서처',
-      color: '#0e7490', bg: '#e0f2fe',
-      persona: '시장 규모, 경쟁사 가격, 유통·원가를 표로 정리하는 리서처'
-    },
-    {
-      id: 'b3', name: '방카르3', role: '마케터 · 홍보/지원', emoji: '📢',
-      kind: 'github', handle: 'bangkar3', person: '홍보와 고객 응대를 맡는 마케터',
-      color: '#be185d', bg: '#fde8f1',
-      persona: '콘텐츠 게시 계획과 채널 운영, 고객 문의 응대를 맡는 마케터'
-    },
-    {
-      id: 'gpt', name: 'GPT', role: '기획 · 사업성 분석', emoji: '🧠',
-      kind: 'api', provider: 'gpt', mention: /@\s?gpt/i,
-      color: '#0f766e', bg: '#e6f7f4',
-      persona: '상품 기획과 사업성(마진·손익분기)을 숫자로 검증하는 기획자'
-    },
-    {
-      id: 'claude', name: '클로드', role: '카피 · 전략/문서', emoji: '✍️',
-      kind: 'api', provider: 'claude', mention: /@\s?(클로드|claude)/i,
-      color: '#b45309', bg: '#fdf1e3',
-      persona: '제안서·문서 구조와 광고 카피를 쓰는 카피라이터 겸 전략가'
-    },
-    {
-      id: 'gemini', name: '제미나이', role: '빠른 초안 · 브레인스토밍', emoji: '✨',
-      kind: 'api', provider: 'gemini', mention: /@\s?(제미나이|제미니|gemini)/i,
-      color: '#4338ca', bg: '#ecebff',
-      persona: '아이디어를 많이 뽑고 초안을 빠르게 만드는 브레인스토머'
-    }
+  /* ---------- 0. 오류 수집(검증용) ---------- */
+  window.__AISO = { errors: [], version: 'chat-v3-2026-11-28' };
+  window.addEventListener('error', function (e) {
+    window.__AISO.errors.push(String(e.message || e.type));
+  });
+  window.addEventListener('unhandledrejection', function (e) {
+    var r = e.reason;
+    window.__AISO.errors.push('rejection: ' + String((r && r.message) || r));
+  });
+
+  /* ---------- 1. 상수 ---------- */
+  var POSITIONS = [
+    { no: 1, name: '방카르', tag: '총괄', label: '총괄·방카르', color: '#12B76A',
+      role: '대표의 지시를 목표·우선순위로 바꿔 팀을 지휘하고, 마지막에 대표에게 결론과 결정 요청을 올리는 총괄.' },
+    { no: 2, name: '방카르2', tag: '리서치', label: '리서치·방카르2', color: '#2E90FA',
+      role: '시장·경쟁사·가격·수요를 조사해 사실과 숫자로 정리하는 리서치 담당. 모르는 것은 추정이라고 밝힌다.' },
+    { no: 3, name: '방카르3', tag: '마케팅', label: '마케팅·방카르3', color: '#F79009',
+      role: '고객에게 어떻게 알리고 팔지(채널·문구·가격·프로모션)를 설계하고 첫 주 목표를 정하는 마케팅 담당.' },
+    { no: 4, name: 'GPT', tag: '기획', label: '기획·GPT', color: '#7A5AF8',
+      role: '아이디어를 실행 가능한 기획(범위·일정·산출물·성공 기준)으로 쪼개는 기획 담당.' },
+    { no: 5, name: '클로드', tag: '개발', label: '개발·클로드', color: '#0BA5A8',
+      role: '기획을 실제로 만들고(웹앱·자동화·스크립트) 동작을 확인하며 걸리는 점을 먼저 말하는 개발 담당.' },
+    { no: 6, name: '제미나이', tag: '검증', label: '검증·제미나이', color: '#EE46BC',
+      role: '숫자·약속·표현의 오류와 위험을 짚고, 빠진 것을 지적하는 검증 담당. 맞장구 대신 반대 근거를 댄다.' }
   ];
-  // 방카르 1·2·3의 멘션 규칙 (숫자를 정확히 구분)
-  TEAM[0].mention = /@\s?방카르\s?1(?!\d)/;
-  TEAM[1].mention = /@\s?방카르\s?2(?!\d)/;
-  TEAM[2].mention = /@\s?방카르\s?3(?!\d)/;
+  var RELAY = [1, 2, 4, 5, 3, 6];          // 회의 순서: 총괄 → 리서치 → 기획 → 개발 → 마케팅 → 검증
+  var LS_SET = 'aisotong.settings.v3';
+  var LS_MSG = 'aisotong.messages.v3';
+  var POLL_MS = 10000;                      // 공용 파일 확인 간격(10초)
+  var MAX_MSG = 300;                        // 공용 파일에 보관할 최대 메시지 수
 
-  var PROVIDERS = {
-    openai: {
-      name: 'OpenAI',
-      models: ['gpt-4o-mini', 'gpt-4.1-mini', 'gpt-4o', 'gpt-4.1']
-    },
-    openrouter: {
-      name: 'OpenRouter',
-      models: [
-        'openai/gpt-4o-mini', 'openai/gpt-oss-120b',
-        'anthropic/claude-3.5-sonnet', 'anthropic/claude-3.7-sonnet',
-        'google/gemini-2.5-flash'
-      ]
-    },
-    anthropic: {
-      name: 'Anthropic',
-      models: ['claude-3-5-sonnet-latest', 'claude-3-7-sonnet-latest']
-    },
-    gemini: {
-      name: 'Google AI Studio',
-      models: ['gemini-2.5-flash', 'gemini-2.5-flash-lite', 'gemini-2.0-flash', 'gemini-2.5-pro']
-    }
+  var DEFAULT_SET = {
+    pat: '', repo: 'bjyoutube/ai-meeting-room', path: 'office-messages.json', branch: 'main',
+    autoSync: true,
+    geminiKey: '', geminiModel: 'gemini-2.5-flash',
+    orKey: '', orModel: 'meta-llama/llama-3.3-70b-instruct:free',
+    posProvider: {}
   };
 
-  /* 연결 설정 모달에 그릴 블록들 — 초보자용 한 줄 설명 + 발급 링크 */
-  var SETTINGS_BLOCKS = [
-    {
-      keyName: 'openai', title: 'OpenAI (GPT 직통)', who: '@GPT 담당',
-      keyLabel: 'OpenAI API 키 (sk-…)',
-      fields: [{ field: 'openai', label: '모델', models: PROVIDERS.openai.models }],
-      url: 'https://platform.openai.com/api-keys', urlLabel: 'platform.openai.com/api-keys',
-      hint: '로그인 → Create new secret key → 나온 키를 복사해 붙여넣으세요. GPT가 OpenAI로 직접 답합니다(키가 있으면 OpenRouter보다 우선).'
-    },
-    {
-      keyName: 'openrouter', title: 'OpenRouter (GPT·클로드 경유)', who: '@GPT · @클로드 담당',
-      keyLabel: 'OpenRouter API 키 (sk-or-…)',
-      fields: [
-        { field: 'orGpt', label: 'GPT용 모델', models: ['openai/gpt-4o-mini', 'openai/gpt-oss-120b', 'openai/gpt-4.1-mini'] },
-        { field: 'orClaude', label: '클로드용 모델', models: ['anthropic/claude-3.5-sonnet', 'anthropic/claude-3.7-sonnet', 'anthropic/claude-3.5-haiku'] }
-      ],
-      url: 'https://openrouter.ai/keys', urlLabel: 'openrouter.ai/keys',
-      hint: '가입 → Keys → Create Key. 한 키로 GPT·클로드를 함께 부를 수 있어 가장 간단합니다(무료 모델은 이름 끝에 :free).'
-    },
-    {
-      keyName: 'anthropic', title: 'Anthropic (클로드 직통)', who: '@클로드 담당',
-      keyLabel: 'Anthropic API 키 (sk-ant-…)',
-      fields: [{ field: 'anthropic', label: '모델', models: PROVIDERS.anthropic.models }],
-      url: 'https://console.anthropic.com/settings/keys', urlLabel: 'console.anthropic.com/settings/keys',
-      hint: '브라우저에서 직접 부르면 사이트 쪽 보안(CORS) 때문에 막히는 경우가 많습니다. 실패하면 OpenRouter를 쓰세요(그게 더 안정적).'
-    },
-    {
-      keyName: 'gemini', title: 'Google AI Studio (제미나이)', who: '@제미나이 담당',
-      keyLabel: 'Google AI Studio API 키 (AIza…)',
-      fields: [{ field: 'gemini', label: '모델', models: PROVIDERS.gemini.models }],
-      url: 'https://aistudio.google.com/app/apikey', urlLabel: 'aistudio.google.com/app/apikey',
-      hint: 'Google 계정 로그인 → API 키 만들기 → 복사. 무료 등급(분당·일일 한도)으로 충분히 테스트할 수 있습니다.'
-    },
-    {
-      keyName: 'github', title: 'GitHub 공용 소통창 (방카르 1·2·3)', who: '피클 팀',
-      keyLabel: 'GitHub PAT (ghp_… 또는 github_pat_…)',
-      fields: [],
-      url: 'https://github.com/settings/tokens', urlLabel: 'github.com/settings/tokens',
-      hint: 'Fine-grained token → Repository access: bjyoutube/ai-meeting-room → Permissions: Contents = Read and write. 이 토큰이 있어야 지시가 <code>office-messages.json</code>에 실제로 커밋됩니다(읽기는 토큰 없이도 됩니다).',
-      extra: '<button type="button" class="mini-btn" data-gh-test="1" style="margin-top:8px">공용창 연결 확인</button>'
-    }
-  ];
-
-  var REPO = { owner: 'bjyoutube', name: 'ai-meeting-room', branch: 'main', path: 'office-messages.json' };
-  var RAW_URL = 'https://raw.githubusercontent.com/' + REPO.owner + '/' + REPO.name + '/' + REPO.branch + '/' + REPO.path;
-  var API_URL = 'https://api.github.com/repos/' + REPO.owner + '/' + REPO.name + '/contents/' + REPO.path;
-  var AUTO_PULL_MS = 20000;
-
-  var LS = {
-    msgs: 'co.msgs.v1',
-    keys: 'co.keys.v1',
-    models: 'co.models.v1',
-    usage: 'co.usage.v1',
-    ui: 'co.ui.v1'
+  var S = {
+    set: JSON.parse(JSON.stringify(DEFAULT_SET)),
+    msgs: [],
+    running: false,
+    stopFlag: false,
+    currentCall: null,
+    typingPos: null,
+    status: {},
+    expanded: {},
+    poll: { ok: null, error: '', nextAt: 0, busy: false, lastOkAt: 0 },
+    write: { busy: false, pending: false, timer: 0 },
+    nearBottom: true
   };
+  POSITIONS.forEach(function (p) { S.status[p.no] = '대기'; });
 
-  /* ============================================================
-     2. 저장소 (localStorage) — 실패해도 앱이 멈추지 않게 감싼다
-     ============================================================ */
-  function readJSON(key, fallback) {
-    try {
-      var raw = localStorage.getItem(key);
-      if (!raw) return fallback;
-      var v = JSON.parse(raw);
-      return (v === null || v === undefined) ? fallback : v;
-    } catch (e) {
-      return fallback;
-    }
+  /* ---------- 2. 작은 도구들 ---------- */
+  function $(sel, root) { return (root || document).querySelector(sel); }
+  function el(tag, cls, text) {
+    var n = document.createElement(tag);
+    if (cls) n.className = cls;
+    if (text !== undefined) n.textContent = text;
+    return n;
   }
-  function writeJSON(key, value) {
-    try {
-      localStorage.setItem(key, JSON.stringify(value));
-      return true;
-    } catch (e) {
-      toast('저장 공간이 부족해 기록을 남기지 못했습니다.');
-      return false;
-    }
-  }
-
-  function nextResetTime(now) {
-    var d = new Date(now);
-    d.setHours(9, 0, 0, 0);
-    if (d.getTime() <= now) d.setDate(d.getDate() + 1);
-    return d.getTime();
-  }
-
-  var messages = readJSON(LS.msgs, []);
-  if (!Array.isArray(messages)) messages = [];
-  messages = messages.filter(function (m) {
-    return m && typeof m === 'object' && (m.kind === 'user' || m.kind === 'ai' || m.kind === 'notice');
-  }).slice(-200);
-
-  var keys = readJSON(LS.keys, {});
-  if (!keys || typeof keys !== 'object') keys = {};
-  ['openai', 'openrouter', 'anthropic', 'gemini', 'github'].forEach(function (p) {
-    if (typeof keys[p] !== 'string') keys[p] = '';
-  });
-
-  var DEFAULT_MODELS = {
-    openai: 'gpt-4o-mini',
-    orGpt: 'openai/gpt-4o-mini',
-    orClaude: 'anthropic/claude-3.5-sonnet',
-    anthropic: 'claude-3-5-sonnet-latest',
-    gemini: 'gemini-2.5-flash'
-  };
-  var savedModels = readJSON(LS.models, {});
-  var models = {};
-  Object.keys(DEFAULT_MODELS).forEach(function (f) {
-    models[f] = (savedModels && typeof savedModels[f] === 'string' && savedModels[f].trim())
-      ? savedModels[f].trim()
-      : DEFAULT_MODELS[f];
-  });
-
-  var savedUsage = readJSON(LS.usage, {});
-  var usage = {};
-  TEAM.forEach(function (emp) {
-    var s = (savedUsage && savedUsage[emp.id]) ? savedUsage[emp.id] : {};
-    usage[emp.id] = {
-      pct: (typeof s.resetAt === 'number' && Date.now() >= s.resetAt) ? 100 : (typeof s.pct === 'number' ? s.pct : 100),
-      calls: (typeof s.resetAt === 'number' && Date.now() >= s.resetAt) ? 0 : (typeof s.calls === 'number' ? s.calls : 0),
-      resetAt: (typeof s.resetAt === 'number' && Date.now() < s.resetAt) ? s.resetAt : nextResetTime(Date.now())
-    };
-  });
-
-  var savedUi = readJSON(LS.ui, {});
-  var ui = {
-    autoPull: (savedUi && typeof savedUi.autoPull === 'boolean') ? savedUi.autoPull : true,
-    dashOpen: (savedUi && typeof savedUi.dashOpen === 'boolean') ? savedUi.dashOpen : (window.innerWidth > 720)
-  };
-
-  /* 실행 중 상태(새로고침하면 대기 중으로 돌아간다) */
-  var runtime = {};
-  TEAM.forEach(function (emp) { runtime[emp.id] = { state: 'idle', since: 0 }; });
-
-  /* GitHub 공용창 */
-  var remote = { updatedAt: '', messages: [], loaded: false };
-
-  var busy = false;
-  var usageTargetId = null;
-  var pullTimer = null;
-
-  /* ============================================================
-     3. 작은 도구들
-     ============================================================ */
-  var $ = function (sel, root) { return (root || document).querySelector(sel); };
-  var $$ = function (sel, root) { return Array.prototype.slice.call((root || document).querySelectorAll(sel)); };
-
-  function sleep(ms) { return new Promise(function (r) { setTimeout(r, ms); }); }
-  function clamp(n, a, b) { return Math.min(b, Math.max(a, n)); }
-  function uid(prefix) {
-    return (prefix || 'm') + Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
-  }
-
-  function escapeHtml(s) {
-    return String(s)
-      .replace(/&/g, '&amp;')
-      .replace(/</g, '&lt;')
-      .replace(/>/g, '&gt;')
-      .replace(/"/g, '&quot;')
-      .replace(/'/g, '&#39;');
-  }
-
-  function formatText(text) {
-    var s = escapeHtml(text);
-    var blocks = [];
-    s = s.replace(/```[\s\S]*?```/g, function (m) {
-      var code = m.slice(3, -3).replace(/^[a-zA-Z0-9+#-]*\n/, '');
-      blocks.push('<pre><code>' + code.replace(/\n$/, '') + '</code></pre>');
-      return '\u0000BLOCK' + (blocks.length - 1) + '\u0000';
+  function esc(s) {
+    return String(s === undefined || s === null ? '' : s).replace(/[&<>"']/g, function (c) {
+      return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
     });
-    s = s.replace(/^\s{0,3}#{2,4}\s+(.+)$/gm, '<div class="md-h3">$1</div>');
-    s = s.replace(/^\s{0,3}#\s+(.+)$/gm, '<div class="md-h2">$1</div>');
-    s = s.replace(/\*\*([^*\n]+)\*\*/g, '<b>$1</b>');
-    s = s.replace(/`([^`\n]+)`/g, '<code>$1</code>');
-    s = s.replace(/^\s*[-*•]\s+(.+)$/gm, '<div class="md-li">• $1</div>');
-    s = s.replace(/\n/g, '<br>');
-    s = s.replace(/\u0000BLOCK(\d+)\u0000/g, function (_, i) { return blocks[Number(i)]; });
-    return s;
   }
-
-  var MENTION_RE = /@(전체|방카르\s?[123]|GPT|클로드|제미나이)/gi;
-  function formatUser(text) {
-    return escapeHtml(text).replace(MENTION_RE, '<span class="mention">@$1</span>').replace(/\n/g, '<br>');
-  }
-
-  function hhmm(ts) {
-    var d = new Date(ts);
-    return d.toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit', hour12: false });
-  }
-  function dayKey(ts) {
-    var d = new Date(ts);
-    return d.getFullYear() + '-' + (d.getMonth() + 1) + '-' + d.getDate();
-  }
-  function dayLabel(ts) {
-    var d = new Date(ts);
-    var now = new Date();
-    if (dayKey(ts) === dayKey(now.getTime())) return '오늘';
-    var y = new Date(now.getTime() - 86400000);
-    if (dayKey(ts) === dayKey(y.getTime())) return '어제';
-    return d.getFullYear() + '년 ' + (d.getMonth() + 1) + '월 ' + d.getDate() + '일';
-  }
-  function timeAgo(ts) {
-    if (!ts) return '';
-    var diff = Math.max(0, Date.now() - ts);
-    var min = Math.floor(diff / 60000);
-    if (min < 1) return '방금 전';
-    if (min < 60) return min + '분 전';
-    var hour = Math.floor(min / 60);
-    if (hour < 24) return hour + '시간 전';
-    return Math.floor(hour / 24) + '일 전';
-  }
-  function timeUntil(ts) {
-    var diff = Math.max(0, ts - Date.now());
-    var min = Math.floor(diff / 60000);
-    var hour = Math.floor(min / 60);
-    if (hour < 1) return min + '분 후';
-    if (hour < 24) return hour + '시간 후';
-    var day = Math.floor(hour / 24);
-    return day + '일 ' + (hour % 24) + '시간 후';
-  }
-
-  function empById(id) {
-    for (var i = 0; i < TEAM.length; i++) if (TEAM[i].id === id) return TEAM[i];
-    return null;
-  }
-  function empByHandle(h) {
-    for (var i = 0; i < TEAM.length; i++) if (TEAM[i].handle === h) return TEAM[i];
-    return null;
-  }
-  function empByName(n) {
-    var clean = String(n || '').replace(/^@/, '').replace(/\s/g, '');
-    return empByHandle(clean) || null;
-  }
-  function hasKey(name) { return !!(keys[name] || '').trim(); }
-
-  var toastTimer = null;
-  function toast(msg) {
-    var el = $('#toast');
-    el.textContent = msg;
-    el.classList.add('show');
-    clearTimeout(toastTimer);
-    toastTimer = setTimeout(function () { el.classList.remove('show'); }, 3200);
-  }
-
-  function short(s, n) {
+  function clip(s, n) {
     s = String(s || '').replace(/\s+/g, ' ').trim();
-    return s.length > n ? s.slice(0, n) + '…' : s;
+    return s.length > n ? s.slice(0, n - 1) + '…' : s;
+  }
+  function sleep(ms) { return new Promise(function (r) { setTimeout(r, ms); }); }
+  function uid() {
+    return Date.now().toString(36) + '-' + Math.random().toString(36).slice(2, 7);
+  }
+  function posOf(no) {
+    for (var i = 0; i < POSITIONS.length; i++) { if (POSITIONS[i].no === no) return POSITIONS[i]; }
+    return null;
+  }
+  function posByTag(tag) {
+    for (var i = 0; i < POSITIONS.length; i++) { if (POSITIONS[i].tag === tag) return POSITIONS[i]; }
+    return null;
+  }
+  function fmtTime(iso) {
+    var d = new Date(iso);
+    if (isNaN(d.getTime())) return '';
+    var h = d.getHours(), m = d.getMinutes();
+    var ap = h < 12 ? '오전' : '오후';
+    var hh = h % 12 === 0 ? 12 : h % 12;
+    return ap + ' ' + hh + ':' + (m < 10 ? '0' + m : m);
+  }
+  function dayLabel(iso) {
+    var d = new Date(iso);
+    if (isNaN(d.getTime())) return '';
+    return d.getFullYear() + '년 ' + (d.getMonth() + 1) + '월 ' + d.getDate() + '일 ' +
+      '일월화수목금토'.charAt(d.getDay()) + '요일';
+  }
+  function md(text) {
+    var h = esc(text);
+    h = h.replace(/`([^`\n]+)`/g, '<code>$1</code>');
+    h = h.replace(/\*\*([^*\n]+)\*\*/g, '<b>$1</b>');
+    h = h.replace(/(https?:\/\/[^\s<]+[^\s<.,)])/g, '<a href="$1" target="_blank" rel="noopener">$1</a>');
+    return h.replace(/\n/g, '<br>');
   }
 
+  var toastTimer = 0;
+  function toast(msg) {
+    var old = $('.toast');
+    if (old) old.remove();
+    var t = el('div', 'toast', msg);
+    document.body.appendChild(t);
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(function () { t.remove(); }, 2600);
+  }
+
+  /* ---------- 3. 저장(localStorage) ---------- */
+  function loadLocal() {
+    try {
+      var s = localStorage.getItem(LS_SET);
+      if (s) {
+        var o = JSON.parse(s);
+        Object.keys(DEFAULT_SET).forEach(function (k) {
+          if (o[k] !== undefined) S.set[k] = o[k];
+        });
+        if (!S.set.posProvider) S.set.posProvider = {};
+      }
+    } catch (e) { /* 저장소를 못 쓰는 브라우저도 있으니 조용히 넘어간다 */ }
+    try {
+      var m = localStorage.getItem(LS_MSG);
+      if (m) {
+        var arr = JSON.parse(m);
+        if (Array.isArray(arr)) S.msgs = arr.filter(function (x) { return x && x.id && x.text; });
+      }
+    } catch (e) { S.msgs = []; }
+  }
+  function saveSettings() {
+    try { localStorage.setItem(LS_SET, JSON.stringify(S.set)); } catch (e) { /* noop */ }
+  }
+  function saveLocal() {
+    try { localStorage.setItem(LS_MSG, JSON.stringify(S.msgs.slice(-MAX_MSG))); } catch (e) { /* noop */ }
+  }
+
+  /* ---------- 4. GitHub 공용 파일(단톡방 칠판) ---------- */
+  function ghConfigured() {
+    return !!(S.set.pat && S.set.repo && S.set.path);
+  }
+  function ghHeaders() {
+    return {
+      'Authorization': 'Bearer ' + String(S.set.pat).trim(),
+      'Accept': 'application/vnd.github+json',
+      'X-GitHub-Api-Version': '2022-11-28'
+    };
+  }
+  function ghUrl(path) {
+    var repo = String(S.set.repo).trim().replace(/^\/+|\/+$/g, '');
+    var p = String(path || S.set.path).trim().replace(/^\/+/, '');
+    return 'https://api.github.com/repos/' + repo + '/contents/' + p;
+  }
   function b64enc(str) {
     var bytes = new TextEncoder().encode(str);
     var bin = '';
@@ -1615,1579 +711,978 @@
     return btoa(bin);
   }
   function b64dec(b64) {
-    var bin = atob(String(b64).replace(/\s/g, ''));
+    var clean = String(b64 || '').replace(/[\r\n\s]/g, '');
+    var bin = atob(clean);
     var bytes = new Uint8Array(bin.length);
     for (var i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
-    return new TextDecoder('utf-8').decode(bytes);
+    return new TextDecoder().decode(bytes);
   }
 
-  /* ============================================================
-     4. 연결 경로 — 누가 어떤 제공사로 답하는가
-     ============================================================ */
-  function routeFor(emp) {
-    if (!emp || emp.kind !== 'api') return null;
-    if (emp.provider === 'gpt') {
-      if (hasKey('openai')) return { provider: 'openai', model: models.openai, label: 'OpenAI' };
-      if (hasKey('openrouter')) return { provider: 'openrouter', model: models.orGpt, label: 'OpenRouter' };
-    } else if (emp.provider === 'claude') {
-      if (hasKey('openrouter')) return { provider: 'openrouter', model: models.orClaude, label: 'OpenRouter' };
-      if (hasKey('anthropic')) return { provider: 'anthropic', model: models.anthropic, label: 'Anthropic' };
-    } else if (emp.provider === 'gemini') {
-      if (hasKey('gemini')) return { provider: 'gemini', model: models.gemini, label: 'Gemini' };
-    }
-    return null;
-  }
-
-  function isReady(emp) {
-    if (emp.kind === 'github') return hasKey('github');
-    return !!routeFor(emp);
-  }
-
-  function connectedApiCount() {
-    return TEAM.filter(function (e) { return e.kind === 'api' && routeFor(e); }).length;
-  }
-
-  /* ============================================================
-     5. 화면 그리기 — 헤더 · 오피스 카드
-     ============================================================ */
-  function renderHeader() {
-    var ghCount = remote.messages.length;
-    $('#roomMeta').textContent = '대화 ' + messages.length + '개 · 공용 메시지 ' + ghCount + '건 · 직원 ' + TEAM.length + '명';
-    $('#onlineCount').textContent = TEAM.length;
-    var api = connectedApiCount();
-    var parts = [];
-    parts.push(hasKey('github') ? '공용창 쓰기 연결' : '공용창 읽기 전용');
-    parts.push(api ? '외부 AI ' + api + '/3 연결' : '외부 AI 데모');
-    $('#modeLabel').textContent = parts.join(' · ');
-  }
-
-  function ghMessagesFor(handle) {
-    var list = [];
-    remote.messages.forEach(function (m) {
-      if (m && m.from === handle) list.push(m);
-    });
-    return list;
-  }
-
-  /* 공용 파일 기준 방카르 상태: 지시가 있고 보고가 아직 없으면 작업 중 */
-  function ghState(emp) {
-    var rt = runtime[emp.id];
-    if (rt.state === 'working' && (Date.now() - rt.since) < 180000) return 'working';
-    var lastInstr = null;
-    var lastReport = null;
-    remote.messages.forEach(function (m) {
-      if (!m) return;
-      var ts = Date.parse(m.ts) || 0;
-      if (m.to === emp.handle && m.type === 'instruction') {
-        if (!lastInstr || ts > lastInstr.ts) lastInstr = { ts: ts, msg: m };
-      }
-      if (m.from === emp.handle && (m.type === 'report' || m.type === 'note')) {
-        if (!lastReport || ts > lastReport.ts) lastReport = { ts: ts, msg: m };
-      }
-    });
-    if (lastInstr && (!lastReport || lastReport.ts < lastInstr.ts)) return 'working';
-    if (lastReport && (Date.now() - lastReport.ts) < 6 * 3600 * 1000) return 'done';
-    return 'idle';
-  }
-
-  function apiState(emp) {
-    var rt = runtime[emp.id];
-    if (rt.state === 'working') return 'working';
-    if (rt.state === 'done' && (Date.now() - rt.since) < 120000) return 'done';
-    return 'idle';
-  }
-
-  function lastActivityOf(emp) {
-    var latest = 0;
-    messages.forEach(function (m) {
-      if (m.kind === 'ai' && m.empId === emp.id && m.ts > latest) latest = m.ts;
-    });
-    if (emp.kind === 'github') {
-      ghMessagesFor(emp.handle).forEach(function (m) {
-        var ts = Date.parse(m.ts) || 0;
-        if (ts > latest) latest = ts;
-      });
-      remote.messages.forEach(function (m) {
-        if (m && m.to === emp.handle) {
-          var ts = Date.parse(m.ts) || 0;
-          if (ts > latest) latest = ts;
+  function ghRead() {
+    return fetch(ghUrl(), { headers: ghHeaders(), cache: 'no-store' }).then(function (r) {
+      if (r.status === 404) return { notFound: true, sha: null, data: { messages: [] } };
+      return r.json().then(function (j) {
+        if (!r.ok) {
+          var msg = (j && j.message) || ('HTTP ' + r.status);
+          if (r.status === 401) msg += ' — 토큰이 틀렸거나 만료됐습니다.';
+          if (r.status === 403) msg += ' — 토큰에 repo(저장소) 권한이 있는지 확인하세요.';
+          throw new Error(msg);
         }
-      });
-    }
-    return latest;
-  }
-
-  var STATE_LABEL = {
-    idle: '🟢 대기 중',
-    working: '🟡 작업 중...',
-    done: '✅ 보고 완료'
-  };
-
-  function renderOffice() {
-    var counts = { idle: 0, working: 0, done: 0 };
-    var html = TEAM.map(function (emp) {
-      var state = emp.kind === 'github' ? ghState(emp) : apiState(emp);
-      counts[state]++;
-      var last = lastActivityOf(emp);
-      var u = usage[emp.id];
-      var tagHtml;
-      if (emp.kind === 'github') {
-        tagHtml = '<span class="tag gh">GitHub</span>';
-      } else {
-        var route = routeFor(emp);
-        tagHtml = route ? '<span class="tag api">API</span>' : '<span class="tag demo">데모</span>';
-      }
-      var middle;
-      var qMini;
-      if (emp.kind === 'github') {
-        var pending = Object.keys(remotePending()).filter(function (h) { return h === emp.handle; }).length;
-        qMini = pending ? '지시 처리 중' : (hasKey('github') ? '공용 쓰기' : '공용 읽기');
-        middle = '<div class="mini-note">🐙 ' + (hasKey('github') ? '공용 파일 쓰기 가능' : '공용 파일 읽기 전용') +
-          (pending ? ' · 내 지시 처리 중' : '') + '</div>' +
-          '<button class="ghost-btn" data-card-act="mention" data-emp="' + emp.id + '">지시 남기기</button>';
-      } else {
-        var pct = clamp(u.pct, 0, 100);
-        var barClass = pct < 10 ? 'bad' : pct < 30 ? 'warn' : '';
-        qMini = '남은 ' + Math.round(pct) + '%';
-        middle = '<div class="mini">' +
-            '<span class="mini-bar ' + barClass + '"><i style="width:' + pct + '%"></i></span>' +
-            '<span class="mini-pct">남은 ' + Math.round(pct) + '%</span>' +
-          '</div>' +
-          '<button class="ghost-btn" data-card-act="usage" data-emp="' + emp.id + '">잔여 한도 입력</button>';
-      }
-      return '' +
-        '<article class="emp-card ' + state + '" data-emp="' + emp.id + '" style="--accent:' + emp.color + '">' +
-          '<div class="card-head">' +
-            '<span class="av" style="background:' + emp.bg + '">' + emp.emoji + '</span>' +
-            '<div class="who-wrap">' +
-              '<span class="who">@' + emp.name + '</span>' +
-              '<span class="role">' + emp.role + '</span>' +
-            '</div>' +
-            tagHtml +
-          '</div>' +
-          '<div class="state-row">' +
-            '<span class="state ' + state + '">' + STATE_LABEL[state] + '</span>' +
-            '<span class="q-mini">' + qMini + '</span>' +
-            '<span class="last" title="마지막 활동">' + (last ? timeAgo(last) : '기록 없음') + '</span>' +
-          '</div>' +
-          middle +
-        '</article>';
-    }).join('');
-
-    $('#cards').innerHTML = html;
-    $('#dashCount').textContent = TEAM.length + '명';
-    $('#dashSummary').innerHTML =
-      '<span>🟢 대기 <b>' + counts.idle + '</b></span>' +
-      '<span>🟡 작업 <b>' + counts.working + '</b></span>' +
-      '<span>✅ 보고 <b>' + counts.done + '</b></span>';
-  }
-
-  /* 로컬에 남긴 지시 중 아직 보고가 없는 방카르 */
-  function remotePending() {
-    var pending = {};
-    messages.forEach(function (m) {
-      if (!m || m.kind !== 'user' || !m.ghHandles || !m.ghHandles.length) return;
-      if (!m.remoteIds || !m.remoteIds.length) return; // 실제로 커밋된 지시만 '처리 중'
-      if (Date.now() - m.ts > 7 * 86400000) return;
-      m.ghHandles.forEach(function (h) {
-        if (!reportFor(m.remoteIds, h)) pending[h] = true;
+        var text = b64dec(j.content || '');
+        var data = { messages: [] };
+        try { data = JSON.parse(text); } catch (e) { data = { messages: [] }; }
+        if (!Array.isArray(data.messages)) data.messages = [];
+        return { notFound: false, sha: j.sha || null, data: data };
       });
     });
-    return pending;
   }
 
-  function reportFor(remoteIds, handle) {
-    if (!remoteIds || !remoteIds.length) return null;
-    var hit = null;
-    remote.messages.forEach(function (m) {
-      if (!m || m.from !== handle) return;
-      if (m.type !== 'report' && m.type !== 'note') return;
-      if (remoteIds.indexOf(m.replyTo) !== -1) hit = m;
-    });
-    return hit;
-  }
-
-  /* 카드 목록을 통째로 다시 그리지 않고 시간·상태만 갱신 (포커스·스크롤 튐 방지) */
-  function updateOfficeTimes() {
-    var flip = false;
-    $$('.emp-card').forEach(function (card) {
-      var emp = empById(card.dataset.emp);
-      if (!emp) return;
-      var st = emp.kind === 'github' ? ghState(emp) : apiState(emp);
-      if (!card.classList.contains(st)) { flip = true; return; }
-      var el = card.querySelector('.last');
-      if (el) {
-        var last = lastActivityOf(emp);
-        el.textContent = last ? timeAgo(last) : '기록 없음';
-      }
-    });
-    if (flip) renderOffice();
-  }
-
-  function renderDashOpen() {
-    var dash = $('#dash');
-    dash.classList.toggle('collapsed', !ui.dashOpen);
-    $('#dashBtn').classList.toggle('is-on', ui.dashOpen);
-    $('#dashBtn').setAttribute('aria-expanded', ui.dashOpen ? 'true' : 'false');
-  }
-
-  function renderAutoBtn() {
-    $('#autoBtn').classList.toggle('is-on', ui.autoPull);
-    $('#autoBtn').title = ui.autoPull ? '20초 자동 새로고침 켜짐 (누르면 끔)' : '자동 새로고침 꺼짐 (누르면 켬)';
-  }
-
-  function setSync(state, text) {
-    var line = $('#syncLine');
-    line.className = 'sync-line' + (state ? ' ' + state : '');
-    $('#syncText').innerHTML = text;
-  }
-
-  /* ============================================================
-     6. 화면 그리기 — 대화 (로컬 + 공용창 합치기)
-     ============================================================ */
-  function mergedMessages() {
-    var out = [];
-    var known = {};
-    messages.forEach(function (m) {
-      out.push(m);
-      if (m.id) known[m.id] = true;
-      if (m.remoteIds) m.remoteIds.forEach(function (id) { known[id] = true; });
-    });
-    remote.messages.forEach(function (r) {
-      if (!r || !r.id || known[r.id]) return;
-      var from = String(r.from || '');
-      var isTeam = from.indexOf('bangkar') === 0;
-      var emp = isTeam ? empByHandle(from) : null;
-      out.push({
-        id: 'gh:' + r.id,
-        kind: isTeam ? 'gh' : (from === 'owner' ? 'user' : 'notice'),
-        empId: emp ? emp.id : null,
-        text: (r.type === 'note' && !isTeam ? '🐙 공용창 메모: ' : '') + String(r.text || ''),
-        ts: Date.parse(r.ts) || Date.now(),
-        source: 'github',
-        remoteFrom: from,
-        remoteType: r.type || ''
-      });
-    });
-    out.sort(function (a, b) { return a.ts - b.ts; });
-    return out;
-  }
-
-  function messageNode(m) {
-    if (m.kind === 'notice') {
-      var n = document.createElement('div');
-      n.className = 'notice';
-      n.textContent = m.text;
-      return n;
+  function mergeLists(a, b) {
+    var map = {}, order = [];
+    function push(m) {
+      if (!m || !m.id || !m.text) return;
+      if (!map[m.id]) { map[m.id] = m; order.push(m.id); }
     }
-    var emp = empById(m.empId);
-    var wrap = document.createElement('div');
-    wrap.className = 'msg ' + (m.kind === 'user' ? 'user' : 'ai') + (m.kind === 'gh' ? ' gh' : '');
-    wrap.dataset.id = m.id;
-
-    var av = document.createElement('div');
-    av.className = 'avatar';
-    if (m.kind === 'user') {
-      av.textContent = '👑';
-      av.title = '대표';
-    } else {
-      av.textContent = emp ? emp.emoji : '🤖';
-      av.style.background = emp ? emp.bg : '#eef2f6';
-      av.title = emp ? emp.name : 'AI';
-    }
-
-    var stack = document.createElement('div');
-    stack.className = 'stack';
-
-    if (m.kind !== 'user' && emp) {
-      var top = document.createElement('div');
-      top.className = 'msg-top';
-      var src;
-      if (m.source === 'github') src = '<span class="source gh" title="GitHub 공용 파일에서 읽은 보고">🐙 공용창</span>';
-      else if (m.source === 'api') src = '<span class="source api" title="실제 API 응답">✓ 실제 API</span>';
-      else src = '<span class="source demo" title="시뮬레이션 답변 — 실제 AI가 아닙니다">데모</span>';
-      top.innerHTML = '<span class="name" style="color:' + emp.color + '">@' + emp.name + '</span>' +
-        '<span class="role-badge">' + emp.role + '</span>' + src;
-      stack.appendChild(top);
-    }
-
-    if (m.kind === 'ai' && m.quote) {
-      var q = document.createElement('div');
-      q.className = 'reply-quote';
-      q.textContent = '↳ ' + m.quote;
-      stack.appendChild(q);
-    }
-
-    var bubble = document.createElement('div');
-    bubble.className = 'bubble';
-    if (m.kind === 'user') bubble.innerHTML = formatUser(m.text);
-    else bubble.innerHTML = formatText(m.text);
-    stack.appendChild(bubble);
-
-    var meta = document.createElement('div');
-    meta.className = 'meta';
-    if (m.kind === 'user') {
-      var bits = [];
-      if (m.ghHandles && m.ghHandles.length) {
-        if (!m.remoteIds || !m.remoteIds.length) {
-          bits.push('🐙 공용창 미연결 · 화면에만 기록');
-        } else {
-          var states = m.ghHandles.map(function (h) {
-            var e = empByHandle(h);
-            var name = e ? '@' + e.name : h;
-            return name + (reportFor(m.remoteIds, h) ? ' ✅ 보고 도착' : ' ⏳ 보고 대기');
-          });
-          bits.push('🐙 공용창 지시 · ' + states.join(' · '));
-        }
-      }
-      if (m.readBy) bits.push(m.readBy + '명 확인');
-      bits.push(hhmm(m.ts));
-      meta.textContent = bits.join(' · ');
-    } else if (m.kind === 'gh') {
-      meta.textContent = '🐙 GitHub 공용 파일 · ' + hhmm(m.ts) + (m.remoteType === 'note' ? ' · 메모' : ' · 보고');
-    } else {
-      meta.textContent = (m.model ? m.model + ' · ' : '') + hhmm(m.ts);
-    }
-    stack.appendChild(meta);
-
-    wrap.appendChild(av);
-    wrap.appendChild(stack);
-    return wrap;
-  }
-
-  var stickToBottom = true;
-
-  function renderChat(forceBottom) {
-    var box = $('#messages');
-    var nearBottom = forceBottom || stickToBottom;
-    var list = mergedMessages();
-    var frag = document.createDocumentFragment();
-    var lastDay = '';
-    list.forEach(function (m) {
-      var dk = dayKey(m.ts);
-      if (dk !== lastDay) {
-        var div = document.createElement('div');
-        div.className = 'day-divider';
-        div.innerHTML = '<span>' + dayLabel(m.ts) + '</span>';
-        frag.appendChild(div);
-        lastDay = dk;
-      }
-      frag.appendChild(messageNode(m));
-    });
-    box.innerHTML = '';
-    box.appendChild(frag);
-    $('#intro').hidden = list.length > 0;
-    if (nearBottom) scrollToBottom();
-  }
-
-  function scrollToBottom() {
-    var chat = $('#chat');
-    chat.scrollTop = chat.scrollHeight;
-    stickToBottom = true;
-  }
-
-  function showTyping(emp) {
-    var slot = $('#typing');
-    slot.innerHTML = '<div class="msg ai typing">' +
-      '<div class="avatar" style="background:' + emp.bg + '">' + emp.emoji + '</div>' +
-      '<div class="bubble"><span class="tname">@' + emp.name + ' 작업 중</span>' +
-      '<span class="dots"><i></i><i></i><i></i></span></div></div>';
-    if (stickToBottom) scrollToBottom();
-  }
-  function hideTyping() { $('#typing').innerHTML = ''; }
-
-  function addMessage(m) {
-    m.id = m.id || uid();
-    m.ts = m.ts || Date.now();
-    messages.push(m);
-    if (messages.length > 200) messages = messages.slice(-200);
-    writeJSON(LS.msgs, messages);
-    renderChat(true);
-    renderHeader();
-    renderOffice();
-  }
-
-  /* ============================================================
-     7. 멘션 해석
-     ============================================================ */
-  function parseTargets(text) {
-    var t = String(text || '');
-    if (/@\s?전체|모두|다들|전 직원/.test(t)) {
-      var ready = TEAM.filter(isReady);
-      return { emps: ready.length ? ready : TEAM.slice(), all: true, skipped: ready.length ? TEAM.filter(function (e) { return !isReady(e); }) : [] };
-    }
-    var found = TEAM.filter(function (emp) { return emp.mention && emp.mention.test(t); });
-    if (found.length) return { emps: found, all: false, skipped: [] };
-    var def = hasKey('github') ? empById('b1') : empById('gpt');
-    return { emps: [def], all: false, skipped: [] };
-  }
-
-  /* ============================================================
-     8. GitHub 공용 소통창 (office-messages.json)
-     ============================================================ */
-  function ghHeaders(token) {
-    return {
-      'Authorization': 'Bearer ' + token,
-      'Accept': 'application/vnd.github+json',
-      'X-GitHub-Api-Version': '2022-11-28',
-      'Content-Type': 'application/json'
-    };
-  }
-
-  function normalizeRemote(json) {
-    var list = (json && Array.isArray(json.messages)) ? json.messages : [];
-    var clean = list.filter(function (m) {
-      return m && typeof m === 'object' && m.id && typeof m.text === 'string';
-    }).map(function (m) {
-      return {
-        id: String(m.id),
-        ts: typeof m.ts === 'string' ? m.ts : new Date(m.ts || Date.now()).toISOString(),
-        from: String(m.from || ''),
-        to: m.to ? String(m.to) : '',
-        type: String(m.type || 'note'),
-        text: String(m.text),
-        replyTo: m.replyTo ? String(m.replyTo) : null
-      };
-    }).slice(-200);
-    return { updatedAt: (json && json.updatedAt) || '', messages: clean, loaded: true };
-  }
-
-  function setRemote(data) {
-    var before = remote.messages.length;
-    remote = data;
-    renderOffice();
-    renderHeader();
-    renderChat();
-    setSync('ok', '🐙 공용 소통창 · <b>' + remote.messages.length + '건</b> · ' +
-      (remote.updatedAt ? timeAgo(Date.parse(remote.updatedAt) || Date.now()) + ' 갱신' : '갱신 시각 없음'));
-    return remote.messages.length - before;
-  }
-
-  async function pullCommon(silent) {
-    if (!silent) setSync('loading', '🐙 공용 소통창 · 읽는 중…');
-    try {
-      var res = await fetch(RAW_URL + '?t=' + Date.now(), { cache: 'no-store' });
-      if (res.status === 404) {
-        remote.loaded = false;
-        setSync('err', '🐙 공용 소통창 · 아직 파일이 없습니다 (첫 지시 때 만들어집니다)');
-        renderOffice();
-        return 0;
-      }
-      if (!res.ok) throw new Error('HTTP ' + res.status);
-      var json = await res.json();
-      var added = setRemote(normalizeRemote(json));
-      if (!silent) toast('공용창을 새로 읽었습니다 · 메시지 ' + remote.messages.length + '건');
-      else if (added > 0) toast('공용창에 새 소식 ' + added + '건이 도착했습니다.');
-      return added;
-    } catch (e) {
-      setSync('err', '🐙 공용 소통창 · 읽지 못했습니다 (' + short(e.message, 60) + ')');
-      if (!silent) toast('공용창을 읽지 못했어요 — ' + e.message);
+    a.forEach(push); b.forEach(push);
+    var out = order.map(function (id) { return map[id]; });
+    out.sort(function (x, y) {
+      var tx = new Date(x.at || 0).getTime(), ty = new Date(y.at || 0).getTime();
+      if (tx !== ty) return tx - ty;
       return 0;
-    }
+    });
+    return out.slice(-MAX_MSG);
   }
 
-  /* 공용 파일에 메시지 여러 개를 한 커밋으로 추가 */
-  async function ghPush(newMsgs) {
-    var token = (keys.github || '').trim();
-    if (!token) throw new Error('GitHub PAT가 없습니다');
-    var attempt = 0;
-    while (attempt < 2) {
-      attempt++;
-      var cur = await fetch(API_URL, { headers: ghHeaders(token), cache: 'no-store' });
-      var sha = null;
-      var data = { updatedAt: new Date().toISOString(), messages: [] };
-      if (cur.status === 200) {
-        var j = await cur.json();
-        sha = j.sha;
-        try { data = normalizeRemote(JSON.parse(b64dec(j.content))); } catch (e) { data = { updatedAt: '', messages: [] }; }
-      } else if (cur.status === 401) {
-        throw new Error('PAT가 올바르지 않습니다 (401)');
-      } else if (cur.status === 403) {
-        throw new Error('PAT 권한이 부족합니다 (403) — Contents 쓰기 권한을 확인하세요');
-      } else if (cur.status !== 404) {
-        throw new Error('공용 파일을 읽지 못했어요 (HTTP ' + cur.status + ')');
-      }
+  function setConn(kind, sec) {
+    var btn = $('#conn'), tx = $('#connTx');
+    if (!btn || !tx) return;
+    btn.className = 'conn' + (kind === 'ok' ? '' : ' ' + kind);
+    if (kind === 'ok') tx.textContent = '연결됨 (' + (sec === undefined ? 10 : sec) + '초)';
+    else if (kind === 'err') tx.textContent = '연결 실패';
+    else tx.textContent = '로컬 저장';
+  }
 
-      var merged = { updatedAt: new Date().toISOString(), messages: data.messages.concat(newMsgs).slice(-200) };
-      var body = {
-        message: 'cyber-office: ' + new Date().toISOString().slice(0, 16).replace('T', ' ') + ' 지시/메모 ' + newMsgs.length + '건',
-        content: b64enc(JSON.stringify(merged, null, 2)),
-        branch: REPO.branch
+  function pollOnce(manual) {
+    if (!ghConfigured()) { setConn('local'); if (manual) toast('PAT가 없어 이 기기에만 저장합니다'); return Promise.resolve(); }
+    if (S.poll.busy) return Promise.resolve();
+    S.poll.busy = true;
+    return ghRead().then(function (r) {
+      S.poll.ok = true; S.poll.error = ''; S.poll.lastOkAt = Date.now();
+      var remote = r.data.messages || [];
+      var before = S.msgs.length;
+      var merged = mergeLists(S.msgs, remote);
+      var localOnly = merged.length !== remote.length && S.msgs.some(function (m) {
+        return !remote.some(function (rm) { return rm.id === m.id; });
+      });
+      if (merged.length !== S.msgs.length || JSON.stringify(merged) !== JSON.stringify(S.msgs)) {
+        S.msgs = merged;
+        saveLocal();
+        renderTimeline();
+        if (S.msgs.length > before) flashJump();
+      }
+      setConn('ok');
+      if (localOnly) queuePush();
+      if (manual) toast('동기화 완료 · 공용 메시지 ' + remote.length + '개');
+    }).catch(function (e) {
+      S.poll.ok = false;
+      S.poll.error = e.message || '알 수 없는 오류';
+      setConn('err');
+      if (manual) toast('동기화 실패: ' + clip(S.poll.error, 60));
+    }).then(function () {
+      S.poll.busy = false;
+      S.poll.nextAt = Date.now() + POLL_MS;
+    });
+  }
+
+  function queuePush() {
+    clearTimeout(S.write.timer);
+    S.write.timer = setTimeout(pushNow, 1800);
+  }
+
+  function pushNow() {
+    if (!ghConfigured()) { saveLocal(); return Promise.resolve(); }
+    if (S.write.busy) { S.write.pending = true; return Promise.resolve(); }
+    S.write.busy = true;
+    var payload = null;
+    return ghRead().then(function (r) {
+      var remote = r.data.messages || [];
+      var merged = mergeLists(remote, S.msgs);
+      if (merged.length !== S.msgs.length) { S.msgs = merged; saveLocal(); renderTimeline(); }
+      var body = JSON.stringify({
+        version: 3,
+        room: 'AI 소통창',
+        app: 'https://bjyoutube.github.io/ai-meeting-room/',
+        updatedAt: new Date().toISOString(),
+        messages: merged
+      }, null, 2);
+      payload = {
+        message: 'AI 소통창: 메시지 ' + merged.length + '개 (' + new Date().toISOString().slice(0, 16).replace('T', ' ') + ')',
+        content: b64enc(body),
+        branch: S.set.branch || 'main',
+        sha: r.sha || undefined
       };
-      if (sha) body.sha = sha;
-
-      var put = await fetch(API_URL, { method: 'PUT', headers: ghHeaders(token), body: JSON.stringify(body) });
-      if (put.ok) {
-        var pj = await put.json();
-        if (pj && pj.content && pj.content.content) {
-          try { setRemote(normalizeRemote(JSON.parse(b64dec(pj.content.content)))); } catch (e) { setRemote(merged); }
-        } else {
-          setRemote(merged);
-        }
-        return merged;
+      return fetch(ghUrl(), {
+        method: 'PUT',
+        headers: Object.assign({ 'Content-Type': 'application/json' }, ghHeaders()),
+        body: JSON.stringify(payload)
+      });
+    }).then(function (resp) {
+      return resp.json().then(function (j) {
+        if (resp.status === 409) throw new Error('conflict');
+        if (!resp.ok) throw new Error((j && j.message) || ('HTTP ' + resp.status));
+        S.poll.ok = true; S.poll.error = '';
+        setConn('ok');
+        return j;
+      });
+    }).catch(function (e) {
+      if (String(e.message) === 'conflict') {
+        // 다른 기기가 먼저 올렸다 → 최신 내용으로 다시 합쳐 한 번 더
+        S.write.busy = false;
+        return sleep(600).then(pushNow);
       }
-      if (put.status === 409 || put.status === 422) { await sleep(500); continue; }
-      var detail = '';
-      try { var pj2 = await put.json(); detail = pj2.message || ''; } catch (e) { detail = ''; }
-      if (put.status === 401) throw new Error('PAT가 올바르지 않습니다 (401)');
-      if (put.status === 403) throw new Error('PAT 권한이 부족합니다 (403) — Contents 쓰기 권한 필요');
-      throw new Error('커밋 실패 (HTTP ' + put.status + (detail ? ' · ' + short(detail, 60) : '') + ')');
-    }
-    throw new Error('동시에 수정돼 커밋이 겹쳤습니다. 잠시 뒤 다시 시도해 주세요.');
+      S.poll.ok = false; S.poll.error = e.message || 'push 실패';
+      setConn('err');
+    }).then(function () {
+      S.write.busy = false;
+      if (S.write.pending) { S.write.pending = false; queuePush(); }
+    });
   }
 
-  async function testGitHub(token) {
-    if (!token) { toast('먼저 GitHub PAT를 입력해 주세요.'); return; }
-    try {
-      var res = await fetch(API_URL, { headers: ghHeaders(token), cache: 'no-store' });
-      if (res.status === 200) {
-        var j = await res.json();
-        toast('연결 OK · office-messages.json 쓰기 가능 (현재 SHA ' + String(j.sha).slice(0, 7) + ')');
-      } else if (res.status === 404) {
-        toast('저장소는 보이지만 아직 파일이 없습니다 — 첫 지시 때 자동으로 만들어집니다.');
-      } else if (res.status === 401) {
-        toast('PAT가 올바르지 않습니다 (401).');
-      } else if (res.status === 403) {
-        toast('권한이 부족합니다 (403). Contents: Read and write 를 켜 주세요.');
-      } else {
-        toast('예상 밖 응답: HTTP ' + res.status);
-      }
-    } catch (e) {
-      toast('연결 확인 실패 — ' + e.message);
-    }
+  /* ---------- 5. AI 호출 ---------- */
+  function providerFor(pos) {
+    var pref = (S.set.posProvider && S.set.posProvider[pos.no]) || 'auto';
+    if (pref === 'gemini' || pref === 'openrouter' || pref === 'demo') return pref;
+    if (S.set.geminiKey) return 'gemini';
+    if (S.set.orKey) return 'openrouter';
+    return 'demo';
+  }
+  function anyRealKey() {
+    return !!(S.set.geminiKey || S.set.orKey);
   }
 
-  /* ============================================================
-     9. AI 호출 (OpenAI · OpenRouter · Anthropic · Gemini)
-     ============================================================ */
-  function ApiError(message, status) {
-    this.name = 'ApiError';
-    this.message = message;
-    this.status = status || 0;
-  }
-  ApiError.prototype = Object.create(Error.prototype);
-
-  function errText(status, json) {
-    var detail = '';
-    try {
-      detail = (json && json.error && (json.error.message || json.error.status)) || (json && json.message) || '';
-    } catch (e) { detail = ''; }
-    var low = String(detail).toLowerCase();
-    var base;
-    if (/api key|credential|unauthenticated|invalid authentication|incorrect api key/.test(low)) base = 'API 키가 올바르지 않거나 권한이 없어요';
-    else if (/credit|quota|billing|insufficient/.test(low)) base = '크레딧·결제 한도가 부족해요';
-    else if (/model.*(not found|not exist|does not exist)|unknown model|no such model/.test(low)) base = '모델 이름을 찾을 수 없어요(⚙️에서 모델 확인)';
-    else if (status === 401 || status === 403) base = 'API 키가 올바르지 않거나 권한이 없어요';
-    else if (status === 402) base = '크레딧이 부족해요';
-    else if (status === 429) base = '무료 한도를 넘었어요(잠시 뒤 다시 시도)';
-    else if (status === 404) base = '모델을 찾을 수 없어요(⚙️에서 모델 이름 확인)';
-    else if (status === 400) base = '요청이 거부됐어요(모델·키를 확인해 주세요)';
-    else if (status >= 500) base = '제공사 서버가 잠시 불안정해요';
-    else base = '요청이 거부됐어요';
-    return detail ? base + ' — ' + short(detail, 120) : base;
-  }
-
-  async function requestJSON(url, options, timeoutMs) {
-    var ctrl = new AbortController();
-    var timer = setTimeout(function () { ctrl.abort(); }, timeoutMs || 60000);
-    try {
-      var res = await fetch(url, Object.assign({}, options, { signal: ctrl.signal }));
-      var raw = await res.text();
-      var json = null;
-      try { json = JSON.parse(raw); } catch (e) { json = null; }
-      if (!res.ok) throw new ApiError(errText(res.status, json || { message: short(raw, 120) }), res.status);
-      if (!json) throw new ApiError('응답을 이해하지 못했어요', res.status);
-      return json;
-    } catch (e) {
-      if (e && e.name === 'AbortError') throw new ApiError('응답이 너무 늦어 60초에 멈췄어요', 0);
-      if (e instanceof ApiError) throw e;
-      throw new ApiError('연결하지 못했어요(인터넷·방화벽·CORS 확인)', 0);
-    } finally {
-      clearTimeout(timer);
-    }
-  }
-
-  async function callGemini(model, systemPrompt, userPrompt) {
-    var key = (keys.gemini || '').trim();
-    var url = 'https://generativelanguage.googleapis.com/v1beta/models/' +
-      encodeURIComponent(model) + ':generateContent?key=' + encodeURIComponent(key);
-    var body = {
-      systemInstruction: { parts: [{ text: systemPrompt }] },
-      contents: [{ role: 'user', parts: [{ text: userPrompt }] }],
-      generationConfig: { temperature: 0.8, maxOutputTokens: 1600 }
-    };
-    var json = await requestJSON(url, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(body)
-    }, 60000);
-
-    var cand = json.candidates && json.candidates[0];
-    var parts = (cand && cand.content && cand.content.parts) || [];
-    var out = parts.filter(function (p) { return p && !p.thought && typeof p.text === 'string'; })
-      .map(function (p) { return p.text; }).join('').trim();
-    if (!out) {
-      var reason = (json.promptFeedback && json.promptFeedback.blockReason) || (cand && cand.finishReason) || '';
-      throw new ApiError('답변이 비어 있어요' + (reason ? ' (' + short(reason, 40) + ')' : ''), 0);
-    }
-    return out;
-  }
-
-  async function callOpenAICompatible(provider, model, systemPrompt, userPrompt) {
-    var key = (keys[provider] || '').trim();
-    var isOpenAI = provider === 'openai';
-    var url = isOpenAI
-      ? 'https://api.openai.com/v1/chat/completions'
-      : 'https://openrouter.ai/api/v1/chat/completions';
-    var headers = {
-      'Content-Type': 'application/json',
-      'Authorization': 'Bearer ' + key
-    };
-    if (!isOpenAI) {
-      headers['HTTP-Referer'] = (location.protocol === 'http:' || location.protocol === 'https:') ? location.origin : 'https://localhost';
-      // 헤더 값은 반드시 ASCII만 — 한글을 넣으면 브라우저가 요청 자체를 거부한다
-      headers['X-Title'] = 'AI Cyber Office';
-    }
-    var body = {
-      model: model,
-      messages: [
-        { role: 'system', content: systemPrompt },
-        { role: 'user', content: userPrompt }
-      ],
-      temperature: 0.7,
-      max_tokens: 1400
-    };
-    var json = await requestJSON(url, {
-      method: 'POST',
-      headers: headers,
-      body: JSON.stringify(body)
-    }, 60000);
-
-    var choice = json.choices && json.choices[0];
-    var out = choice && choice.message && typeof choice.message.content === 'string' ? choice.message.content.trim() : '';
-    if (!out) throw new ApiError('답변이 비어 있어요(모델이 거부했을 수 있어요)', 0);
-    return out;
-  }
-
-  async function callAnthropic(model, systemPrompt, userPrompt) {
-    var key = (keys.anthropic || '').trim();
-    var json = await requestJSON('https://api.anthropic.com/v1/messages', {
-      method: 'POST',
-      headers: {
-        'content-type': 'application/json',
-        'x-api-key': key,
-        'anthropic-version': '2023-06-01',
-        // 브라우저에서 직접 부르기 허용 헤더 (없으면 CORS에서 막힘)
-        'anthropic-dangerous-direct-browser-access': 'true'
-      },
-      body: JSON.stringify({
-        model: model,
-        max_tokens: 1400,
-        system: systemPrompt,
-        messages: [{ role: 'user', content: userPrompt }]
-      })
-    }, 60000);
-    var out = (json.content || []).filter(function (c) { return c && c.type === 'text'; })
-      .map(function (c) { return c.text; }).join('').trim();
-    if (!out) throw new ApiError('답변이 비어 있어요(모델이 거부했을 수 있어요)', 0);
-    return out;
-  }
-
-  function buildTranscript() {
-    var recent = mergedMessages().slice(-10);
-    if (!recent.length) return '';
-    return recent.map(function (m) {
-      if (m.kind === 'user') return '대표: ' + short(m.text, 220);
-      if (m.kind === 'ai' || m.kind === 'gh') {
-        var e = empById(m.empId);
-        return (e ? e.name : 'AI') + ': ' + short(m.text, 260);
-      }
-      return '';
-    }).filter(Boolean).join('\n');
-  }
-
-  function systemPromptFor(emp, transcript) {
+  function systemPrompt(pos, mode) {
     var lines = [
-      "당신은 1인 기업의 '사이버 오피스'에서 일하는 직원 '" + emp.name + "'입니다.",
-      '역할: ' + emp.persona + '.',
-      '대표는 개발·회계 비전문가입니다. 전문용어는 괄호로 쉬운 말을 붙여 주세요.',
-      '항상 한국어로, 결론 → 근거 → 다음 행동 순서로 12줄 안쪽으로 정리하세요.',
-      '숫자는 추정이면 "추정"이라고 밝히고, 확인하지 못한 사실을 단정하지 마세요.',
-      '모든 제안에서 매출·비용·수익성을 함께 봅니다. 근거 없는 낙관은 하지 않습니다.'
+      '너는 1인 기업(대표 1명 + AI 직원 6명)의 AI 직원이다.',
+      '이름: ' + pos.label + ' / 포지션: ' + pos.tag,
+      '담당: ' + pos.role,
+      '지금 너는 카카오톡 같은 단체 채팅방에서 대표와 동료 AI 직원들과 대화하고 있다.',
+      '',
+      '[발언 규칙]',
+      '1. 한국어 존댓말. 3~7줄. 짧고 실행 가능하게. (장황한 설명 금지)',
+      '2. 직전 발언을 읽고 앞사람을 @태그 로 한 번 부르며 이어받는다.',
+      '3. 네 담당 파트에서 "지금 할 일 / 판단 / 걸리는 점"을 구체적으로 적는다.',
+      '4. 마지막 줄에서 다음 사람에게 @태그 로 한 문장 넘긴다. 네가 마지막 순서면 대표에게 결정 요청으로 끝낸다.',
+      '5. 확인하지 않은 숫자·사실은 "추정"이라고 밝힌다. 없는 사실을 만들지 않는다.',
+      '6. 동료 말이 틀렸으면 정중히 지적한다. 맞장구만 치지 않는다.',
+      '7. 이모지는 문장당 최대 1개. 번호 목록은 필요할 때만 쓴다.',
+      '8. 같은 말 반복 금지. 앞사람이 이미 말한 것은 요약만 하고 새 내용을 보탠다.'
     ];
-    if (transcript) lines.push('', '[지금까지 대화]', transcript);
+    if (mode === 'status') {
+      lines.push('', '[이번 차례] 현황 보고 모드다. "완료 / 진행 중 / 다음 할 일 / 막힌 것" 네 줄로만 보고한다.');
+    } else if (mode === 'single') {
+      lines.push('', '[이번 차례] 대표가 너만 불렀다. 네 담당 파트의 답만 3~6줄로 한다. 다른 직원에게 넘기는 말은 짧게.');
+    } else {
+      lines.push('', '[이번 차례] 릴레이 회의다. 위 채팅을 읽고 네 순서의 발언을 한다.');
+    }
     return lines.join('\n');
   }
 
-  async function respond(emp, text) {
-    var route = routeFor(emp);
-    var u = usage[emp.id];
-    var sys = systemPromptFor(emp, buildTranscript());
-    var userPrompt = '[대표의 지시]\n' + text + '\n\n위 지시에 ' + emp.name + '의 역할 관점에서 답하세요.';
+  function buildTranscript(limit) {
+    var list = S.msgs.filter(function (m) { return m.role !== 'system'; }).slice(-(limit || 22));
+    return list.map(function (m) {
+      var p = posOf(m.pos);
+      var who = m.role === 'user' ? '대표' : ('@' + (p ? p.tag : 'AI') + '(' + (m.name || '') + ')');
+      return who + ': ' + clip(m.text, 260);
+    }).join('\n');
+  }
 
-    if (!route) {
-      await sleep(700 + Math.random() * 700);
-      return { source: 'demo', text: demoReply(emp, text), model: '데모 모드' };
+  function userPrompt(pos, req, mode) {
+    var head = '[대표의 지시]\n' + req;
+    var tail = '[지금 발언자] ' + pos.label + ' (' + pos.tag + ')';
+    if (mode === 'status') tail += ' — 현황 보고';
+    return head + '\n\n[지금까지의 채팅]\n' + (buildTranscript() || '(아직 없음)') + '\n\n' + tail;
+  }
+
+  function timeoutSignal(parentSignal, ms) {
+    var ctl = new AbortController();
+    var t = setTimeout(function () { try { ctl.abort(); } catch (e) { /* noop */ } }, ms);
+    if (parentSignal) {
+      if (parentSignal.aborted) { clearTimeout(t); ctl.abort(); }
+      else parentSignal.addEventListener('abort', function () { clearTimeout(t); ctl.abort(); }, { once: true });
     }
-    if (u && u.pct <= 0) {
-      await sleep(500);
-      return {
-        source: 'demo',
-        text: demoReply(emp, text),
-        model: '데모 모드',
-        notice: emp.name + '의 잔여 한도가 0%라 데모 답변으로 대신했어요. 카드의 ‘잔여 한도 입력’에서 채울 수 있습니다.'
-      };
-    }
-
-    var started = Date.now();
-    try {
-      var out;
-      if (route.provider === 'gemini') out = await callGemini(route.model, sys, userPrompt);
-      else if (route.provider === 'anthropic') out = await callAnthropic(route.model, sys, userPrompt);
-      else out = await callOpenAICompatible(route.provider, route.model, sys, userPrompt);
-      var elapsed = Date.now() - started;
-      if (elapsed < 700) await sleep(700 - elapsed);
-      return { source: 'api', text: out, model: route.model };
-    } catch (e) {
-      await sleep(250);
-      return {
-        source: 'demo',
-        text: demoReply(emp, text),
-        model: '데모 모드',
-        notice: emp.name + '의 실제 API 호출이 실패해 데모 답변으로 대신했습니다. (' + e.message + ')'
-      };
-    }
+    return { signal: ctl.signal, done: function () { clearTimeout(t); } };
   }
 
-  function bumpUsage(empId, source) {
-    var u = usage[empId];
-    if (!u) return;
-    u.calls += 1;
-    if (source === 'api') u.pct = Math.max(0, Math.round((u.pct - 2) * 10) / 10);
-    writeJSON(LS.usage, usage);
-  }
-
-  /* ============================================================
-     10. 데모 모드 답변 — 직원별 시뮬레이션
-     ============================================================ */
-  function topicOf(text) {
-    var s = String(text || '')
-      .replace(MENTION_RE, ' ')
-      .replace(/\s+/g, ' ')
-      .trim();
-    if (!s) return '이번 사업 아이디어';
-    return s.length > 48 ? s.slice(0, 48) + '…' : s;
-  }
-
-  function recentUserLines(excludeText) {
-    var skip = String(excludeText || '').replace(/\s+/g, ' ').trim();
-    var users = messages.filter(function (m) {
-      if (m.kind !== 'user') return false;
-      if (!skip) return true;
-      return String(m.text).replace(/\s+/g, ' ').trim() !== skip;
-    }).slice(-3);
-    return users.map(function (m) { return '· "' + short(String(m.text).replace(/@\S+/g, '').trim(), 44) + '"'; }).join('\n');
-  }
-
-  function demoSummary(askedText) {
-    return [
-      '지금까지 오피스 대화를 회의록으로 정리했습니다.',
-      '',
-      '■ 다룬 이야기',
-      recentUserLines(askedText) || '· (아직 대화가 없습니다)',
-      '',
-      '■ 직원들이 공통으로 본 것',
-      '· 방카르1: 지금 결정할 것은 “누구에게 얼마에” 한 줄',
-      '· 방카르2: 시장 크기와 단가를 먼저 숫자로',
-      '· GPT: 1건당 남는 돈과 손익분기(본전 판매량)',
-      '· 클로드: 사는 사람을 먼저 정하고 문구를 맞추기',
-      '',
-      '■ 결정된 것',
-      '· 아직 확정된 결정은 없습니다. 대상 품목을 하나로 좁히는 것이 먼저입니다.',
-      '',
-      '■ 보류된 것',
-      '· 가격 확정 — 원가와 수수료를 확인하기 전에는 정하지 않습니다.',
-      '',
-      '■ 다음 회의 안건',
-      '1) 팔 물건(또는 서비스) 1개 확정',
-      '2) 판매 채널 1개 확정',
-      '3) 판매가·원가를 넣고 손익분기 다시 계산'
-    ].join('\n');
-  }
-
-  function demoTodo(topic) {
-    return [
-      '"' + topic + '"를 실행 순서로 쪼갰습니다.',
-      '',
-      '□ 오늘 (30분)',
-      '1. 대상 고객·상품을 한 문장으로: "누구에게 무엇을 얼마에"',
-      '2. 경쟁 3곳을 찾아 판매가만 캡처',
-      '',
-      '□ 이번 주',
-      '3. 원가표 만들기 (상품 + 배송 + 수수료)',
-      '4. 1건당 남는 돈 계산 → 목표 월 판매량 역산',
-      '5. 랜딩페이지 1장 만들기 (문의 폼 포함)',
-      '',
-      '□ 다음 주',
-      '6. 게시물 3개 예약 발행',
-      '7. 문의 10건이 모이면 가격·문구 수정',
-      '',
-      '1번이 정해지면 나머지는 순서대로 배분하겠습니다. "1번 완료"라고만 말씀해 주세요.'
-    ].join('\n');
-  }
-
-  function demoDraft(topic) {
-    return [
-      '"' + topic + '"로 바로 올릴 수 있는 초안 3개입니다.',
-      '',
-      '[1] 후킹형',
-      '"이거 하나 바꿨더니 문의가 4배 늘었습니다. 비밀은 ‘누가 사는지’를 먼저 정한 것."',
-      '',
-      '[2] 정보형',
-      '"' + topic + ' 시작 전에 확인할 3가지',
-      '① 살 사람이 실제로 있는지',
-      '② 원가율이 40% 아래인지',
-      '③ 하루 1건 팔 채널이 있는지',
-      '저는 2번에서 한 번 크게 깨졌습니다."',
-      '',
-      '[3] 후기형',
-      '"처음엔 감으로 시작했습니다. 3개월 뒤 남은 건 카드값이었죠. 다시 한다면 시장 → 단가 → 채널 → 광고 순서로 합니다."',
-      '',
-      'CTA는 "댓글에 ‘체크’ 남겨주시면 정리본 보내드릴게요"처럼 한 가지 행동만 요청하세요. 해시태그는 3~5개가 적당합니다.'
-    ].join('\n');
-  }
-
-  function demoLead(topic) {
-    return [
-      '[팀장 요약] "' + topic + '" — 지금 결정할 것은 “누구에게 얼마에 팔 것인가” 한 줄입니다.',
-      '',
-      '■ 오늘 (30분)',
-      '1. 대상 고객 한 줄: 누구의 어떤 문제를 푸는가',
-      '2. 경쟁 3곳의 가격만 캡처 (리뷰 수 함께)',
-      '',
-      '■ 이번 주',
-      '3. 원가표 → 1건당 남는 돈',
-      '4. 랜딩 1장 + 문의 폼',
-      '',
-      '■ 역할 분담',
-      '· 방카르2: 시장·단가 조사(표)',
-      '· GPT: 손익분기 계산',
-      '· 클로드: 제안서·카피',
-      '· 제미나이: 아이디어 10개',
-      '· 방카르3: 게시물 3개 예약',
-      '',
-      '다음 보고는 “1번 확정”부터 받겠습니다. 확정되면 제가 순서표로 다시 정리해 올리겠습니다.'
-    ].join('\n');
-  }
-
-  function demoResearch(topic) {
-    return [
-      '"' + topic + '" 시장조사 순서입니다. 오늘 바로 확인할 수 있는 것부터.',
-      '',
-      '1) 수요 — 네이버 데이터랩 최근 12개월 검색 추이, 유튜브·스레드 상위 5개 조회수',
-      '2) 경쟁·단가 — 크몽·숨고·아이디어스에서 비슷한 상품 10건의 판매가 → 중간값을 기준가로',
-      '3) 원가·물류 — 1688·도매꾹·온채널의 최소 주문 수량(MOQ)과 배송비',
-      '4) 규제 — 관세청 수입요건과 판매 플랫폼 금지 품목만 먼저',
-      '',
-      '지금 단계에서 가장 빠른 지표는 “최근 3개월 안에 돈을 낸 사람이 있는가”입니다. 리뷰 수와 판매 수가 함께 움직이면 실제 수요로 봅니다.',
-      '',
-      '품목이나 지역을 하나로 좁혀 주시면 그때 링크와 가격으로 표를 채워 올리겠습니다.'
-    ].join('\n');
-  }
-
-  function demoMarketing(topic) {
-    return [
-      '"' + topic + '" 홍보 3주 계획입니다. 예산 0원으로 시작하는 순서입니다.',
-      '',
-      '■ 1주차 — 문제 제기형 게시물 3개 (스레드·인스타)',
-      '■ 2주차 — 사례·숫자형 2개 + 댓글 CTA 1개',
-      '■ 3주차 — 후기형 1개 + 문의 폼 링크 고정',
-      '',
-      '[채널 우선순위]',
-      '1. 스레드 — 무료 도달이 가장 빠름',
-      '2. 인스타 릴스 — 같은 영상 재활용',
-      '3. 블로그 — 검색 유입(느리지만 오래감)',
-      '',
-      '[예산] 0원으로 3주 → 반응 좋은 글 1개에만 5만원 부스팅',
-      '',
-      '문구 3개는 @클로드에게 넘기면 톤을 맞춰서 나옵니다. 먼저 올릴 채널 하나만 정해 주세요.'
-    ].join('\n');
-  }
-
-  function demoCopy(topic) {
-    return [
-      '"' + topic + '" 카피 3안과 문서 구성입니다.',
-      '',
-      '[헤드라인 A] "팔기 전에 남는 돈부터 확인하세요."',
-      '[헤드라인 B] "3주면 감이 아니라 숫자가 됩니다."',
-      '[헤드라인 C] "월급만으로는 안 되겠다 싶은 분께."',
-      '',
-      '[본문 뼈대]',
-      '① 지금 겪는 문제 한 줄 ② 왜 감으로 하면 안 되는지 ③ 숫자 3개로 보여주기 ④ 다음 행동 1개',
-      '',
-      '[CTA] "댓글에 ‘계산’ 남겨주시면 제가 쓴 표 보내드립니다."',
-      '',
-      '[제안서 목차] 1. 문제 2. 제안 3. 비용·일정 4. 기대효과 5. 다음 단계',
-      '톤: 과장 없이 담백하게, 숫자로만 설득. 하나 고르시면 5줄로 더 다듬어 드리겠습니다.'
-    ].join('\n');
-  }
-
-  function demoIdea(topic) {
-    return [
-      '"' + topic + '" 빠른 아이디어 10개입니다. 뒤로 갈수록 검증이 쉽습니다.',
-      '',
-      '1. 기존 상품 + 대행 서비스 묶음',
-      '2. 특정 직업군 전용 템플릿 판매',
-      '3. 30분 컨설팅(전화) 상품',
-      '4. 중고 장비 매입→리셋→재판매',
-      '5. 지역 소상공인 콘텐츠 대행',
-      '6. 해외 소싱 대신 국내 도매 위탁',
-      '7. 월 구독형 자료 업데이트',
-      '8. 강의 1편 + 커뮤니티',
-      '9. 경쟁사 리뷰 분석 리포트 판매',
-      '10. 자동화 스크립트 설치 대행',
-      '',
-      '[가장 빨리 돈이 되는 3개] 3번 → 1번 → 10번',
-      '이유: 재고가 없고, 오늘 바로 판매 페이지 1장으로 시작할 수 있습니다.',
-      '',
-      '하나를 고르시면 그 아이템의 첫 판매 문구까지 만들어 드리겠습니다.'
-    ].join('\n');
-  }
-
-  function demoPlanner(topic) {
-    return [
-      '"' + topic + '"를 숫자로 검증해 보겠습니다. 아래는 계산 방법을 보여주는 예시 가정치입니다(실제 시세로 바꿔야 합니다).',
-      '',
-      '· 예상 판매가: 39,000원',
-      '· 원가: 15,600원 (40%)',
-      '· 수수료·결제·배송: 4,700원 (12%)',
-      '· 광고비: 5,850원 (15%)',
-      '· 1건당 남는 돈: 약 12,850원 (33%)',
-      '',
-      '손익분기(본전 판매량) = 월 고정비 50만 원 ÷ 12,850원 ≈ 월 39건.',
-      '→ 하루 1.3건만 팔면 본전입니다. 문제는 “팔 수 있는 채널이 있느냐”입니다.',
-      '',
-      '판단 기준',
-      '· 진행: 이미 팔리는 채널이 있거나, 단가를 20% 올려도 수요가 유지될 때',
-      '· 보류: 광고비를 0으로 두면 판매가 안 될 때',
-      '· 중단: 원가율이 50%를 넘어 가격 경쟁이 불가능할 때',
-      '',
-      '실제 판매가·원가·고정비를 주시면 손익분기표를 다시 계산해 드리겠습니다.'
-    ].join('\n');
-  }
-
-  function demoReply(emp, text) {
-    var topic = topicOf(text);
-    var t = String(text || '');
-    var kind = null;
-    if (/회의\s*정리|요약해|정리해\s*줘|회의록/.test(t)) kind = 'summary';
-    else if (/할\s*일|액션\s*아이템|투두|체크리스트/.test(t)) kind = 'todo';
-    else if (/초안|카피|문구|글\s*써/.test(t)) kind = 'draft';
-
-    if (kind === 'summary') return demoSummary(t);
-    if (kind === 'todo') return demoTodo(topic);
-    if (kind === 'draft') return demoDraft(topic);
-
-    switch (emp.id) {
-      case 'b1': return demoLead(topic);
-      case 'b2': return demoResearch(topic);
-      case 'b3': return demoMarketing(topic);
-      case 'claude': return demoCopy(topic);
-      case 'gemini': return demoIdea(topic);
-      default: return demoPlanner(topic);
-    }
-  }
-
-  /* ============================================================
-     11. 메시지 전송 흐름
-     ============================================================ */
-  function setSending(on) {
-    busy = on;
-    var btn = $('#sendBtn');
-    btn.disabled = on;
-    btn.textContent = on ? '⏳' : '➤';
-  }
-
-  function setState(empId, state) {
-    if (!runtime[empId]) return;
-    runtime[empId] = { state: state, since: Date.now() };
-    renderOffice();
-  }
-
-  async function sendToTeamGh(targets, text) {
-    var handles = targets.map(function (e) { return e.handle; });
-    var stored = {
-      id: uid(), kind: 'user', text: text, ts: Date.now(),
-      ghHandles: handles, remoteIds: [], readBy: 0
-    };
-    messages.push(stored);
-    writeJSON(LS.msgs, messages);
-    renderChat(true);
-    renderHeader();
-
-    if (!hasKey('github')) {
-      var demoAll = connectedApiCount() === 0;
-      messages.push({
-        id: uid(), kind: 'notice', ts: Date.now(),
-        text: demoAll
-          ? 'ℹ️ 지금은 데모 모드입니다. ' + targets.map(function (e) { return '@' + e.name; }).join(' ') +
-            '은(는) ⚙️에 GitHub PAT를 넣으면 공용 소통창(office-messages.json)에서 실제로 움직입니다. 지금은 데모 답변으로 보여드립니다.'
-          : '⚠️ ' + targets.map(function (e) { return '@' + e.name; }).join(' ') +
-            '은 GitHub 공용 소통창으로 움직입니다. ⚙️ 연결 설정에서 GitHub PAT를 넣으면 이 지시가 office-messages.json에 실제로 커밋됩니다. (지금은 이 화면에만 남았습니다.)'
-      });
-      writeJSON(LS.msgs, messages);
-      renderChat(true);
-      renderOffice();
-      return stored;
-    }
-
-    targets.forEach(function (e) { setState(e.id, 'working'); });
-    showTyping(targets[0]);
-
-    var now = new Date().toISOString();
-    var payload = targets.map(function (e) {
-      return {
-        id: uid('gh'),
-        ts: now,
-        from: 'owner',
-        to: e.handle,
-        type: 'instruction',
-        text: text,
-        replyTo: null
-      };
+  function callGemini(system, prompt, signal) {
+    var key = String(S.set.geminiKey).trim();
+    var models = [];
+    (S.set.geminiModel || '').split(',').forEach(function (m) { if (m.trim()) models.push(m.trim()); });
+    ['gemini-2.5-flash', 'gemini-2.0-flash', 'gemini-2.0-flash-lite'].forEach(function (m) {
+      if (models.indexOf(m) < 0) models.push(m);
     });
-
-    try {
-      await ghPush(payload);
-      stored.remoteIds = payload.map(function (p) { return p.id; });
-      hideTyping();
-      toast('공용창에 지시를 올렸습니다 · ' + targets.map(function (e) { return '@' + e.name; }).join(' '));
-    } catch (e) {
-      hideTyping();
-      messages.push({
-        id: uid(), kind: 'notice', ts: Date.now(),
-        text: '⚠️ 공용창 커밋에 실패했습니다. ' + e.message + ' (지시는 이 화면에 남아 있습니다. ⚙️에서 PAT 권한을 확인해 주세요.)'
-      });
-      targets.forEach(function (emp) { setState(emp.id, 'idle'); });
-    }
-    writeJSON(LS.msgs, messages);
-    renderChat(true);
-    renderHeader();
-    renderOffice();
-    return stored;
-  }
-
-  async function sendText(raw) {
-    var text = String(raw || '').replace(/\s+$/, '');
-    if (!text.trim()) return;
-    if (busy) { toast('아직 답변을 쓰고 있습니다. 잠시만요.'); return; }
-
-    var targetInfo = parseTargets(text);
-    var targets = targetInfo.emps;
-    if (!targets.length) return;
-
-    setSending(true);
-    try {
-      var ghTargets = targets.filter(function (e) { return e.kind === 'github'; });
-      var apiTargets = targets.filter(function (e) { return e.kind === 'api'; });
-
-      if (targetInfo.all && targetInfo.skipped && targetInfo.skipped.length) {
-        messages.push({
-          id: uid(), kind: 'notice', ts: Date.now(),
-          text: 'ℹ️ ' + targetInfo.skipped.map(function (e) { return '@' + e.name; }).join(' ') +
-            '은(는) 연결이 없어 이번 @전체에서 빠졌습니다. ⚙️에서 키·PAT를 넣으면 함께 답합니다.'
-        });
-        writeJSON(LS.msgs, messages);
-        renderChat(true);
-      }
-
-      var shared = null;
-      if (ghTargets.length) {
-        shared = await sendToTeamGh(ghTargets, text);
-      }
-
-      if (apiTargets.length) {
-        var userMsg = shared;
-        if (!userMsg) {
-          userMsg = { id: uid(), kind: 'user', text: text, ts: Date.now(), readBy: 0 };
-          messages.push(userMsg);
-          writeJSON(LS.msgs, messages);
-          renderChat(true);
-        }
-
-        for (var i = 0; i < apiTargets.length; i++) {
-          var emp = apiTargets[i];
-          setState(emp.id, 'working');
-          showTyping(emp);
-          var res = await respond(emp, text);
-          hideTyping();
-
-          if (res.notice) {
-            messages.push({ id: uid(), kind: 'notice', text: '⚠️ ' + res.notice, ts: Date.now() });
+    var i = 0;
+    function attempt() {
+      if (i >= models.length) return Promise.reject(new Error('제미나이 모델 호출 실패'));
+      var model = models[i++];
+      var url = 'https://generativelanguage.googleapis.com/v1beta/models/' +
+        encodeURIComponent(model) + ':generateContent';
+      return fetch(url, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'x-goog-api-key': key },
+        signal: signal,
+        body: JSON.stringify({
+          systemInstruction: { parts: [{ text: system }] },
+          contents: [{ role: 'user', parts: [{ text: prompt }] }],
+          generationConfig: { temperature: 0.85, topP: 0.95, maxOutputTokens: 900 }
+        })
+      }).then(function (r) {
+        return r.json().then(function (j) {
+          if (!r.ok) {
+            var m = (j && j.error && j.error.message) || ('HTTP ' + r.status);
+            var err = new Error(m);
+            err.status = r.status;
+            throw err;
           }
-          messages.push({
-            id: uid(),
-            kind: 'ai',
-            empId: emp.id,
-            text: res.text,
-            source: res.source,
-            model: res.source === 'api' ? res.model : null,
-            quote: apiTargets.length > 1 ? short(text.replace(/\s+/g, ' '), 46) : null,
-            ts: Date.now()
-          });
-          bumpUsage(emp.id, res.source);
-          setState(emp.id, 'done');
-          if (i < apiTargets.length - 1) await sleep(220);
-        }
-
-        userMsg.readBy = (userMsg.readBy || 0) + apiTargets.length;
-        writeJSON(LS.msgs, messages);
-        renderChat(true);
-        renderHeader();
-        renderOffice();
-      }
-    } finally {
-      hideTyping();
-      setSending(false);
-      renderOffice();
+          var cand = j.candidates && j.candidates[0];
+          var parts = (cand && cand.content && cand.content.parts) || [];
+          var text = parts.map(function (p) { return p.text || ''; }).join('').trim();
+          if (!text) throw new Error('빈 응답');
+          return text;
+        });
+      }).catch(function (e) {
+        if (e && e.name === 'AbortError') throw e;
+        if (i < models.length) return attempt();
+        throw e;
+      });
     }
+    return attempt();
   }
 
-  /* ============================================================
-     12. 모달 · 설정
-     ============================================================ */
-  function openOverlay(id) {
-    var el = document.getElementById(id);
-    if (el) el.classList.add('open');
-  }
-  function closeOverlay(id) {
-    var el = document.getElementById(id);
-    if (el) el.classList.remove('open');
-  }
-
-  function renderSettings() {
-    $('#providerForms').innerHTML = SETTINGS_BLOCKS.map(function (b) {
-      var has = hasKey(b.keyName);
-      var fields = b.fields.map(function (f) {
-        var listId = 'models-' + f.field;
-        var val = models[f.field] || DEFAULT_MODELS[f.field] || '';
-        return '<div class="field">' +
-          '<label for="model-' + f.field + '">' + f.label + ' (그대로 두면 됩니다)</label>' +
-          '<input id="model-' + f.field + '" type="text" list="' + listId + '" value="' + escapeHtml(val) + '" spellcheck="false" />' +
-          '<datalist id="' + listId + '">' + f.models.map(function (m) { return '<option value="' + escapeHtml(m) + '"></option>'; }).join('') + '</datalist>' +
-        '</div>';
-      }).join('');
-      return '' +
-        '<div class="provider-block">' +
-          '<div class="provider-top">' +
-            '<span class="pname">' + b.title + '</span>' +
-            '<span class="pstate ' + (has ? 'on' : 'off') + '">' + (has ? '연결됨' : '미연결') + '</span>' +
-            '<span class="pwho">' + b.who + '</span>' +
-          '</div>' +
-          '<div class="field">' +
-            '<label for="key-' + b.keyName + '">' + b.keyLabel + '</label>' +
-            '<div class="key-wrap">' +
-              '<input id="key-' + b.keyName + '" type="password" autocomplete="off" spellcheck="false" placeholder="' +
-                (has ? '저장된 값이 있습니다 (바꿀 때만 입력)' : '여기에 붙여넣으세요') + '" value="' + escapeHtml(keys[b.keyName] || '') + '" />' +
-              '<button type="button" data-eye="key-' + b.keyName + '" title="값 보기/숨기기" aria-label="값 보기/숨기기">👁</button>' +
-            '</div>' +
-          '</div>' +
-          fields +
-          '<p class="hint-line">발급: <a href="' + b.url + '" target="_blank" rel="noopener noreferrer">' + b.urlLabel + '</a><br />' + b.hint + '</p>' +
-          (b.extra || '') +
-        '</div>';
-    }).join('');
-  }
-
-  function openSettings() {
-    renderSettings();
-    openOverlay('settingsOverlay');
-  }
-
-  function saveKeys() {
-    ['openai', 'openrouter', 'anthropic', 'gemini', 'github'].forEach(function (p) {
-      var el = document.getElementById('key-' + p);
-      if (el) keys[p] = el.value.trim();
+  function callOpenRouter(system, prompt, signal) {
+    var model = String(S.set.orModel || '').trim() || 'meta-llama/llama-3.3-70b-instruct:free';
+    return fetch('https://openrouter.ai/api/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer ' + String(S.set.orKey).trim(),
+        'X-Title': 'AI 소통창'
+      },
+      signal: signal,
+      body: JSON.stringify({
+        model: model,
+        messages: [
+          { role: 'system', content: system },
+          { role: 'user', content: prompt }
+        ],
+        temperature: 0.85,
+        max_tokens: 900
+      })
+    }).then(function (r) {
+      return r.json().then(function (j) {
+        if (!r.ok) {
+          var m = (j && j.error && j.error.message) || ('HTTP ' + r.status);
+          throw new Error(m);
+        }
+        var text = j && j.choices && j.choices[0] && j.choices[0].message && j.choices[0].message.content;
+        text = String(text || '').trim();
+        if (!text) throw new Error('빈 응답');
+        return text;
+      });
     });
-    Object.keys(DEFAULT_MODELS).forEach(function (f) {
-      var el = document.getElementById('model-' + f);
-      if (el) models[f] = el.value.trim() || DEFAULT_MODELS[f];
+  }
+
+  /* ---------- 데모(연습) 응답 ---------- */
+  var demoCount = 0;
+  function nextTagOf(no) {
+    var i = RELAY.indexOf(no);
+    if (i < 0) return null;
+    var next = RELAY[i + 1];
+    var p = posOf(next);
+    return p ? p.tag : null;
+  }
+  function demoReply(pos, req, mode) {
+    demoCount++;
+    var q = clip(String(req).replace(/@[^\s]+/g, '').trim(), 46) || '이번 건';
+    var next = nextTagOf(pos.no);
+    var nxt = next ? '@' + next : '대표님';
+    var variants = demoCount % 2;
+
+    if (mode === 'status') {
+      var W = {
+        1: ['이번 주 목표 1개 확정, 나머지는 다음 주로 넘김', '대표 결정 대기 — 범위를 1개로 줄일지'],
+        2: ['시장·경쟁 조사 1차 정리', '실제 결제 사례 2건 확인 중'],
+        3: ['첫 주 채널(릴스) 시안 1개 준비', '문구 A/B 두 안 비교 중'],
+        4: ['기획서 초안(1장) 완료', '범위를 1개 기능으로 축소 확정'],
+        5: ['화면 1개 구현·배포 완료', '폰 화면 확인 중'],
+        6: ['숫자·표현 점검 1회 완료', '근거 없는 목표치 1건 지적']
+      };
+      var w = W[pos.no] || ['진행 중', '다음 할 일 정리 중'];
+      return '[현황] ' + pos.label + '\n' +
+        '· 완료: ' + w[0] + '\n' +
+        '· 진행 중: ' + w[1] + '\n' +
+        '· 다음 할 일: ' + (next ? '@' + next + ' 확인 후 이어받기' : '대표님 결정 받기') + '\n' +
+        '· 막힌 것: 없음';
+    }
+
+    if (pos.no === 1) {
+      return '대표님, 「' + q + '」 건으로 회의 열겠습니다.\n\n' +
+        '① 목표: 오늘 안에 “누가 · 무엇을 · 언제까지”가 정해지는 데까지\n' +
+        '② 판단 기준: ⑴ 바로 돈이 되는가 ⑵ 내가 손대지 않아도 되는가 ⑶ 이번 주에 검증되는가\n' +
+        '③ 순서: 리서치 → 기획 → 개발 → 마케팅 → 검증\n\n' +
+        (variants ? '결론부터 말하면 이번 주에 하나만 끝냅니다. ' : '') +
+        nxt + ' 먼저 사실 확인부터 부탁합니다. 숫자 없이 의견만 오가면 회의가 안 끝납니다.';
+    }
+    if (pos.no === 2) {
+      return '@총괄 확인했습니다. 「' + q + '」 관련해 확인 가능한 범위부터 정리합니다.\n\n' +
+        '· 시장: 국내에서 실제 결제가 일어나는 채널은 2~3곳으로 좁혀집니다 (추정 · 교차 확인 필요)\n' +
+        '· 가격대: 경쟁 상품은 3만~15만 원 구간에 몰려 있습니다 (추정)\n' +
+        '· 수요 신호: “대신 해준다”는 문장이 들어간 콘텐츠 반응이 높습니다\n\n' +
+        '정확한 수치는 공개 자료로 다시 확인하겠습니다. ' + nxt + ' 이 내용을 뼈대로 써 주세요.';
+    }
+    if (pos.no === 4) {
+      return '@리서치 받았습니다. 「' + q + '」를 이번 주 실행 단위로 쪼갭니다.\n\n' +
+        '1) 이번 주 산출물: 기획서 1장 + 화면 1개\n' +
+        '2) 범위: 대표님이 반복하던 일 1개만 자동화 (욕심내면 못 끝냅니다)\n' +
+        '3) 일정: 오늘 설계 → 내일 초안 → 모레 확인\n' +
+        '4) 성공 기준: 대표님이 손대지 않아도 결과물이 나오는가\n\n' +
+        nxt + ' 이 범위로 만들 수 있는지 먼저 봐 주세요. 안 되면 지금 줄이겠습니다.';
+    }
+    if (pos.no === 5) {
+      return '@기획 확인했습니다. 기술적으로는 가능합니다.\n\n' +
+        '· 구현: 단일 HTML + GitHub 공용 파일(JSON) — 서버 없이 PC·폰이 같은 방을 봅니다\n' +
+        '· 걸리는 점: API 키·토큰은 각 기기 브라우저에만 저장되므로 새 기기에서는 다시 넣어야 합니다\n' +
+        '· 소요: 초안 1~2시간, 검증까지 반나절 (제 기준 추정)\n' +
+        '· 이번 주엔 1개만: 회의 흐름 먼저, 디자인은 그다음\n\n' +
+        nxt + ' 만든 걸 어떤 말로 알릴지 준비해 주세요.';
+    }
+    if (pos.no === 3) {
+      return '@개발 받았습니다. 만든 것만으로는 안 팔립니다. 「' + q + '」를 고객 말로 바꿉니다.\n\n' +
+        '· 한 줄 문구: “AI 직원 6명이 회의하는 방, 대표는 지시만 하세요”\n' +
+        '· 채널: ⑴ 30초 시연 릴스 ⑵ 후기형 블로그 글 ⑶ 지인 5명 베타\n' +
+        '· 첫 주 목표: 문의 10건 (매출보다 반응 먼저)\n' +
+        '· 리스크: 기능 설명만 하면 반응이 없습니다. “대표가 뭘 안 해도 되는지”를 보여줘야 합니다\n\n' +
+        nxt + ' 숫자와 표현에 문제 없는지 확인해 주세요.';
+    }
+    if (pos.no === 6) {
+      return '@마케팅 확인했습니다. 세 가지만 짚습니다.\n\n' +
+        '1) “AI 직원 6명”은 실제로는 한 모델이 여러 역할을 맡는 구조입니다 — “6개 포지션”으로 고치는 게 정확합니다\n' +
+        '2) “문의 10건”은 근거 없는 목표입니다. 지난 반응 수치를 기준으로 다시 잡아야 합니다\n' +
+        '3) API 키를 화면에 노출하는 문구는 금지입니다. 키는 브라우저 저장소에만 둡니다\n\n' +
+        '@총괄 이상입니다. 대표님 결정이 필요한 것: ⑴ 이번 주 범위를 1개로 줄일지 ⑵ 베타 5명을 지금 받을지.';
+    }
+    return '@총괄 확인했습니다. 맡은 파트에서 이어서 보겠습니다. ' + nxt + ' 준비됐습니다.';
+  }
+
+  function askAI(pos, req, mode) {
+    var provider = providerFor(pos);
+    if (provider === 'demo' || !anyRealKey()) {
+      var wait = 500 + Math.random() * 700;
+      return sleep(wait).then(function () { return { text: demoReply(pos, req, mode), demo: true }; });
+    }
+    var sys = systemPrompt(pos, mode);
+    var prompt = userPrompt(pos, req, mode);
+    var ts = timeoutSignal(S.currentCall ? S.currentCall.signal : null, 45000);
+    var p = provider === 'openrouter'
+      ? callOpenRouter(sys, prompt, ts.signal)
+      : callGemini(sys, prompt, ts.signal);
+    return p.then(function (text) {
+      ts.done();
+      return { text: text.trim(), demo: false };
+    }).catch(function (e) {
+      ts.done();
+      if (e && e.name === 'AbortError') {
+        if (S.stopFlag) throw e;
+        throw new Error('응답 시간 초과(45초) — 모델명·네트워크를 확인하거나 데모로 바꿔 보세요');
+      }
+      throw new Error((e && e.message) || 'AI 호출 실패');
     });
-    writeJSON(LS.keys, keys);
-    writeJSON(LS.models, models);
-    renderOffice();
-    renderHeader();
-    closeOverlay('settingsOverlay');
-
-    var api = connectedApiCount();
-    var bits = [];
-    if (api) bits.push('외부 AI ' + api + '곳 연결');
-    if (hasKey('github')) bits.push('공용창 쓰기 연결');
-    toast(bits.length ? '저장했습니다. ' + bits.join(' · ') + ' — 값은 이 브라우저에만 보관됩니다.' : '저장했습니다. 키가 없어 데모 모드로 동작합니다.');
-    if (hasKey('github')) pullCommon(true);
   }
 
-  function openUsage(id) {
-    var emp = empById(id);
-    if (!emp) return;
-    usageTargetId = id;
-    var u = usage[id];
-    var route = routeFor(emp);
-    $('#usageTarget').innerHTML =
-      '<div class="av" style="background:' + emp.bg + '">' + emp.emoji + '</div>' +
-      '<div><div class="av-name">@' + emp.name + '</div><div class="av-role">' + emp.role + ' · ' +
-        (route ? route.label + ' / ' + route.model : '데모 모드') + '</div></div>';
-    $('#usageRange').value = Math.round(u.pct);
-    $('#usageNum').textContent = Math.round(u.pct);
-    openOverlay('usageOverlay');
+  /* ---------- 6. 릴레이 회의 엔진 ---------- */
+  function parseCommand(text) {
+    var t = String(text);
+
+    // @ 로 시작하는 단어만 멘션으로 센다 ("기획서" 같은 단어를 잘못 잡지 않게)
+    var tokens = (t.match(/@[^\s,。!?]+/g) || []).map(function (x) { return x.slice(1); });
+    var hits = [];
+    POSITIONS.forEach(function (p) {
+      if (tokens.indexOf(p.tag) >= 0 || tokens.indexOf(p.label) >= 0 || tokens.indexOf(p.name) >= 0) {
+        hits.push(p.no);
+      }
+    });
+
+    if (/@?전체\s*회의/.test(t) || /전원\s*회의/.test(t)) {
+      return { mode: 'meeting', targets: RELAY.slice() };
+    }
+    if (/@?현황\s*보고/.test(t)) {
+      return { mode: 'status', targets: RELAY.slice() };
+    }
+    if (hits.length) {
+      var targets = RELAY.filter(function (no) { return hits.indexOf(no) >= 0; });
+      return { mode: hits.length > 1 ? 'meeting' : 'single', targets: targets };
+    }
+    return { mode: 'meeting', targets: RELAY.slice() };
   }
 
-  function saveUsage() {
-    if (!usageTargetId) return;
-    var v = clamp(parseInt($('#usageRange').value, 10) || 0, 0, 100);
-    usage[usageTargetId].pct = v;
-    usage[usageTargetId].resetAt = nextResetTime(Date.now());
-    writeJSON(LS.usage, usage);
-    renderOffice();
-    closeOverlay('usageOverlay');
-    var emp = empById(usageTargetId);
-    toast((emp ? emp.name : '직원') + ' 잔여 한도를 ' + v + '%로 맞췄습니다.');
-    usageTargetId = null;
+  function setRunState(text, on) {
+    var n = $('#runState');
+    if (!n) return;
+    n.className = 'runstate' + (on ? ' on' : '');
+    n.innerHTML = on ? '<span class="spin"></span>' + esc(text) : esc(text);
   }
 
-  function resetChat() {
-    var btn = $('.menu-pop button[data-menu="reset"]');
-    if (btn.dataset.armed === '1') {
-      messages = [];
-      writeJSON(LS.msgs, messages);
-      renderChat(true);
-      renderHeader();
-      renderOffice();
-      closeMenu();
-      toast('대화를 비웠습니다. (키·사용량·공용창은 그대로)');
+  function runRelay(targets, req, mode) {
+    if (S.running) { toast('이미 회의가 진행 중입니다'); return; }
+    S.running = true;
+    S.stopFlag = false;
+    S.userStopped = false;
+    S.finishCalled = false;
+    S.currentCall = new AbortController();
+    POSITIONS.forEach(function (p) { S.status[p.no] = '대기'; });
+    renderMembers();
+
+    var btnStop = $('#btnStop');
+    if (btnStop) btnStop.hidden = false;
+
+    var total = targets.length;
+    var i = 0;
+    var fails = 0;
+
+    function step() {
+      if (S.stopFlag || i >= total) return finish();
+      var no = targets[i];
+      var pos = posOf(no);
+      i++;
+      if (!pos) { return step(); }
+
+      S.status[no] = '회의중';
+      renderMembers();
+      setRunState(i + '/' + total + ' · ' + pos.tag + ' 발언 중...', true);
+      S.typingPos = pos;
+      renderTimeline();
+      scrollBottom(true);
+
+      return askAI(pos, req, mode).then(function (res) {
+        S.typingPos = null;
+        if (S.stopFlag) return finish();
+        appendMsg({
+          role: 'ai', pos: no, name: pos.name, tag: pos.tag,
+          text: res.text, demo: !!res.demo
+        });
+        S.status[no] = '보고완료';
+        renderMembers();
+        return sleep(320);
+      }).catch(function (e) {
+        S.typingPos = null;
+        if (S.stopFlag || (e && e.name === 'AbortError')) return finish();
+        fails++;
+        appendMsg({
+          role: 'system', warn: true,
+          text: '⚠️ ' + pos.label + ' 응답 실패: ' + clip((e && e.message) || '알 수 없는 오류', 140) +
+            '\n🔑 설정에서 키·모델명을 확인해 주세요. (이번 발언은 건너뜁니다)'
+        });
+        S.status[no] = '대기';
+        renderMembers();
+        if (fails >= 2) {
+          appendMsg({ role: 'system', warn: true, text: '회의를 멈춥니다. API 키 또는 한도를 먼저 확인해 주세요.\n키 없이 흐름만 볼 때는 설정에서 해당 포지션을 “데모”로 바꾸면 됩니다.' });
+          S.stopFlag = true;
+          return finish();
+        }
+        return step();
+      }).then(function () {
+        if (S.stopFlag) return finish();
+        return step();
+      });
+    }
+
+    function finish() {
+      if (S.finishCalled) return Promise.resolve();
+      S.finishCalled = true;
+      S.typingPos = null;
+      S.running = false;
+      if (S.currentCall) { try { S.currentCall.abort(); } catch (e) { /* noop */ } }
+      S.currentCall = null;
+      if (btnStop) btnStop.hidden = true;
+      setRunState(S.stopFlag ? '중지됨' : '대기 중', false);
+      if (S.stopFlag) {
+        if (S.userStopped) appendMsg({ role: 'system', text: '■ 회의를 중지했습니다. 이어서 지시하면 다시 시작합니다.' });
+        POSITIONS.forEach(function (p) {
+          if (S.status[p.no] === '회의중') S.status[p.no] = '대기';
+        });
+      }
+      renderMembers();
+      scrollBottom(true);
+      return Promise.resolve();
+    }
+
+    return step();
+  }
+
+  function stopRelay() {
+    if (!S.running) { toast('진행 중인 회의가 없습니다'); return; }
+    S.stopFlag = true;
+    S.userStopped = true;
+    if (S.currentCall) { try { S.currentCall.abort(); } catch (e) { /* noop */ } }
+    setRunState('중지 중...', true);
+    toast('회의를 중지합니다');
+  }
+
+  /* ---------- 7. 메시지 추가·렌더링 ---------- */
+  function appendMsg(m) {
+    m.id = m.id || uid();
+    m.at = m.at || new Date().toISOString();
+    S.msgs.push(m);
+    if (S.msgs.length > MAX_MSG) S.msgs = S.msgs.slice(-MAX_MSG);
+    saveLocal();
+    var stick = isNearBottom();
+    renderTimeline();
+    if (stick) scrollBottom(true); else flashJump();
+    queuePush();
+    return m;
+  }
+
+  function isNearBottom() {
+    var t = $('#timeline');
+    if (!t) return true;
+    return (t.scrollHeight - t.scrollTop - t.clientHeight) < 140;
+  }
+  function scrollBottom(smooth) {
+    var t = $('#timeline');
+    if (!t) return;
+    t.scrollTo({ top: t.scrollHeight, behavior: smooth ? 'smooth' : 'auto' });
+  }
+  function flashJump() {
+    var j = $('#jump');
+    if (j) j.hidden = false;
+  }
+
+  function msgNode(m) {
+    if (m.role === 'system') {
+      var s = el('div', 'sys' + (m.warn ? ' warn' : ''));
+      var in2 = el('div', 'md');
+      in2.innerHTML = md(m.text);
+      s.appendChild(in2);
+      return s;
+    }
+    if (m.role === 'user') {
+      var row = el('div', 'row me');
+      row.dataset.id = m.id;
+      row.innerHTML =
+        '<div class="time">' + esc(fmtTime(m.at)) + '</div>' +
+        '<div class="bubble"><div class="md">' + md(m.text) + '</div></div>';
+      return row;
+    }
+    var p = posOf(m.pos);
+    if (!p) p = { no: '?', label: m.name || 'AI', color: '#98A2B3' };
+    var long = String(m.text).length > 520 && !S.expanded[m.id];
+    var wrap = el('div', 'row ai');
+    wrap.dataset.id = m.id;
+    wrap.innerHTML =
+      '<div class="avatar" style="background:' + esc(p.color) + '">' + esc(p.no) + '</div>' +
+      '<div class="bcol">' +
+        '<div class="who"><b>' + esc(p.label) + '</b>' +
+          (m.demo ? '<span class="chip demo">데모</span>' : '') + '</div>' +
+        '<div class="line">' +
+          '<div class="bubble' + (long ? ' clamp' : '') + '"><div class="md">' + md(m.text) + '</div></div>' +
+          '<div class="time">' + esc(fmtTime(m.at)) + '</div>' +
+        '</div>' +
+        (long ? '<button class="more" data-more="' + esc(m.id) + '">더 보기</button>' : '') +
+      '</div>';
+    return wrap;
+  }
+
+  function renderTimeline() {
+    var t = $('#timeline');
+    if (!t) return;
+    var stick = isNearBottom();
+    var frag = document.createDocumentFragment();
+    if (!S.msgs.length) {
+      var s = el('div', 'sys');
+      var inner = el('div', 'md');
+      inner.innerHTML = md('대화가 비어 있습니다. 아래 입력창에 지시를 적으면 AI 직원 회의가 열립니다.\n또는 빠른 태그 @전체회의 를 눌러 보세요.');
+      s.appendChild(inner);
+      frag.appendChild(s);
+    }
+    var lastDay = '';
+    S.msgs.forEach(function (m) {
+      var day = dayLabel(m.at);
+      if (day && day !== lastDay) {
+        var d = el('div', 'day');
+        d.appendChild(el('span', '', day));
+        frag.appendChild(d);
+        lastDay = day;
+      }
+      frag.appendChild(msgNode(m));
+    });
+    if (S.typingPos) {
+      var tp = S.typingPos;
+      var row = el('div', 'row ai typing');
+      row.innerHTML =
+        '<div class="avatar" style="background:' + esc(tp.color) + '">' + esc(tp.no) + '</div>' +
+        '<div class="bcol"><div class="who"><b>' + esc(tp.label) + '</b></div>' +
+        '<div class="line"><div class="bubble"><span class="d"></span><span class="d"></span><span class="d"></span></div></div></div>';
+      frag.appendChild(row);
+    }
+    t.innerHTML = '';
+    t.appendChild(frag);
+    if (stick || S.typingPos) scrollBottom(true);
+  }
+
+  function renderMembers() {
+    var box = $('#members');
+    if (!box) return;
+    box.innerHTML = '';
+    POSITIONS.forEach(function (p) {
+      var b = el('button', 'mchip');
+      b.dataset.pos = p.no;
+      b.title = p.label + ' — ' + p.role + ' (누르면 이 포지션만 부릅니다)';
+      var st = S.status[p.no] || '대기';
+      var cls = st === '회의중' ? 'live' : (st === '보고완료' ? 'done' : '');
+      b.innerHTML = '<span class="no" style="--c:' + esc(p.color) + '">' + p.no + '</span>' +
+        '<span class="mt">' + esc(p.tag) + '·' + esc(p.name) + '</span>' +
+        '<span class="st ' + cls + '">' + esc(st) + '</span>';
+      box.appendChild(b);
+    });
+  }
+
+  function renderModeChip() {
+    var c = $('#modeChip');
+    if (!c) return;
+    var real = false;
+    POSITIONS.forEach(function (p) { if (providerFor(p) !== 'demo') real = true; });
+    c.hidden = !real ? false : true;
+    if (!real) c.textContent = '데모 모드';
+  }
+
+  /* ---------- 8. 보내기 ---------- */
+  function send() {
+    var input = $('#input');
+    if (!input) return;
+    var text = input.value.trim();
+    if (!text) return;
+    input.value = '';
+    autoGrow();
+    appendMsg({ role: 'user', name: '대표', text: text });
+    scrollBottom(true);
+    var cmd = parseCommand(text);
+    if (S.running) {
+      toast('회의가 진행 중입니다. 남은 직원이 이 메시지를 함께 봅니다');
       return;
     }
-    btn.dataset.armed = '1';
-    btn.textContent = '🧹 한 번 더 누르면 초기화';
-    setTimeout(function () {
-      if (btn) { btn.dataset.armed = '0'; btn.textContent = '🧹 대화 초기화'; }
-    }, 6000);
+    runRelay(cmd.targets, text, cmd.mode);
   }
-
-  function exportChat() {
-    var list = mergedMessages();
-    if (!list.length) { toast('내보낼 대화가 없습니다.'); return; }
-    var lines = list.map(function (m) {
-      if (m.kind === 'user') return '나: ' + m.text;
-      if (m.kind === 'ai' || m.kind === 'gh') {
-        var e = empById(m.empId);
-        return (e ? e.name : 'AI') + ' (' + (m.source === 'api' ? '실제 API' : m.source === 'github' ? '공용창' : '데모') + '): ' + m.text;
-      }
-      return '(알림) ' + m.text;
-    });
-    var head = '# 1인 기업 사이버 오피스 대화\n\n- 내보낸 시각: ' + new Date().toLocaleString('ko-KR') + '\n\n';
-    var blob = new Blob([head + lines.join('\n\n')], { type: 'text/markdown;charset=utf-8' });
-    var a = document.createElement('a');
-    var now = new Date();
-    var stamp = now.getFullYear() + '-' + String(now.getMonth() + 1).padStart(2, '0') + '-' + String(now.getDate()).padStart(2, '0');
-    a.href = URL.createObjectURL(blob);
-    a.download = '사이버-오피스-' + stamp + '.md';
-    document.body.appendChild(a);
-    a.click();
-    setTimeout(function () { URL.revokeObjectURL(a.href); a.remove(); }, 1000);
-    closeMenu();
-    toast('대화를 파일로 내려받았습니다.');
-  }
-
-  function closeMenu() {
-    $('#menuPop').hidden = true;
-    $('#menuBtn').setAttribute('aria-expanded', 'false');
-  }
-
-  /* ============================================================
-     13. 입력창 도우미
-     ============================================================ */
-  var input = $('#input');
 
   function autoGrow() {
+    var input = $('#input');
+    if (!input) return;
     input.style.height = 'auto';
     input.style.height = Math.min(input.scrollHeight, 132) + 'px';
   }
 
-  function updateChips() {
-    var v = input.value;
-    $$('#chipRow .chip').forEach(function (chip) {
-      var name = chip.dataset.mention;
-      var on = name === '전체' ? /@전체/.test(v) : v.indexOf('@' + name) !== -1;
-      chip.classList.toggle('active', on);
+  /* ---------- 9. 설정 화면 ---------- */
+  function openModal(id) {
+    var m = document.getElementById(id);
+    if (m) m.hidden = false;
+  }
+  function closeModal(id) {
+    var m = document.getElementById(id);
+    if (m) m.hidden = true;
+  }
+
+  function fillSettings() {
+    if ($('#fPat')) $('#fPat').value = S.set.pat || '';
+    if ($('#fRepo')) $('#fRepo').value = S.set.repo || '';
+    if ($('#fPath')) $('#fPath').value = S.set.path || '';
+    if ($('#fAuto')) $('#fAuto').checked = !!S.set.autoSync;
+    if ($('#fGem')) $('#fGem').value = S.set.geminiKey || '';
+    if ($('#fGemModel')) $('#fGemModel').value = S.set.geminiModel || '';
+    if ($('#fOr')) $('#fOr').value = S.set.orKey || '';
+    if ($('#fOrModel')) $('#fOrModel').value = S.set.orModel || '';
+
+    var box = $('#posProviders');
+    if (box) {
+      box.innerHTML = '';
+      POSITIONS.forEach(function (p) {
+        var row = el('div', 'prov-row');
+        var pref = (S.set.posProvider && S.set.posProvider[p.no]) || 'auto';
+        row.innerHTML =
+          '<div class="nm"><i style="background:' + esc(p.color) + '">' + p.no + '</i>' + esc(p.label) + '</div>' +
+          '<select id="prov' + p.no + '">' +
+            '<option value="auto"' + (pref === 'auto' ? ' selected' : '') + '>자동 (키 있는 쪽)</option>' +
+            '<option value="gemini"' + (pref === 'gemini' ? ' selected' : '') + '>제미나이 (Google)</option>' +
+            '<option value="openrouter"' + (pref === 'openrouter' ? ' selected' : '') + '>오픈라우터</option>' +
+            '<option value="demo"' + (pref === 'demo' ? ' selected' : '') + '>데모 (가짜 대화)</option>' +
+          '</select>';
+        box.appendChild(row);
+      });
+    }
+    var note = $('#storeNote');
+    if (note) {
+      note.textContent = '저장 위치: 이 브라우저의 localStorage(브라우저가 기기에 두는 작은 저장소). ' +
+        '키는 깃허브 저장소에 올라가지 않습니다. 공용 파일에는 대화 내용만 적힙니다.';
+    }
+    var out = $('#testOut');
+    if (out) out.hidden = true;
+  }
+
+  function readSettingsForm() {
+    S.set.pat = ($('#fPat').value || '').trim();
+    S.set.repo = ($('#fRepo').value || '').trim() || DEFAULT_SET.repo;
+    S.set.path = ($('#fPath').value || '').trim() || DEFAULT_SET.path;
+    S.set.autoSync = !!$('#fAuto').checked;
+    S.set.geminiKey = ($('#fGem').value || '').trim();
+    S.set.geminiModel = ($('#fGemModel').value || '').trim() || DEFAULT_SET.geminiModel;
+    S.set.orKey = ($('#fOr').value || '').trim();
+    S.set.orModel = ($('#fOrModel').value || '').trim() || DEFAULT_SET.orModel;
+    POSITIONS.forEach(function (p) {
+      var sel = document.getElementById('prov' + p.no);
+      if (sel) S.set.posProvider[p.no] = sel.value;
     });
   }
 
-  function insertMention(name) {
-    var token = '@' + name + ' ';
-    var start = (typeof input.selectionStart === 'number') ? input.selectionStart : input.value.length;
-    var end = (typeof input.selectionEnd === 'number') ? input.selectionEnd : input.value.length;
-    input.value = input.value.slice(0, start) + token + input.value.slice(end);
-    var pos = start + token.length;
-    input.focus();
-    try { input.setSelectionRange(pos, pos); } catch (e) { /* noop */ }
-    autoGrow();
-    updateChips();
+  function testConnection() {
+    var out = $('#testOut');
+    readSettingsForm();
+    if (!S.set.pat) {
+      out.hidden = false;
+      out.className = 'out bad';
+      out.textContent = 'PAT가 비어 있습니다. PAT 없이도 이 기기에서는 대화가 됩니다(로컬 모드).';
+      return;
+    }
+    out.hidden = false;
+    out.className = 'out';
+    out.textContent = '확인 중...';
+    fetch('https://api.github.com/repos/' + S.set.repo, { headers: ghHeaders(), cache: 'no-store' })
+      .then(function (r) { return r.json().then(function (j) { return { r: r, j: j }; }); })
+      .then(function (o) {
+        if (!o.r.ok) throw new Error((o.j && o.j.message) || ('HTTP ' + o.r.status));
+        var perm = (o.j.permissions && o.j.permissions.push) ? '쓰기 가능' : '읽기만 가능(쓰기 권한 없음)';
+        return ghRead().then(function (rr) {
+          out.className = 'out ok';
+          out.textContent = '✅ 연결됨\n· 저장소: ' + o.j.full_name + ' (' + perm + ')\n' +
+            '· 공용 파일: ' + S.set.path + (rr.notFound ? ' — 아직 없습니다. 처음 메시지를 보내면 자동으로 만듭니다.' : ' — 있습니다(메시지 ' + (rr.data.messages || []).length + '개)') +
+            '\n· 이제 10초마다 자동으로 확인합니다.';
+        });
+      })
+      .catch(function (e) {
+        out.className = 'out bad';
+        out.textContent = '❌ 실패: ' + (e.message || e) +
+          '\n\n확인할 것: ⑴ 토큰에 repo 권한이 있는지 ⑵ 저장소 이름이 owner/repo 형식인지 ⑶ 토큰이 만료되지 않았는지';
+      });
   }
 
-  /* ============================================================
-     14. 자동 새로고침
-     ============================================================ */
-  function scheduleAutoPull() {
-    if (pullTimer) { clearInterval(pullTimer); pullTimer = null; }
-    if (!ui.autoPull) return;
-    pullTimer = setInterval(function () {
-      if (document.hidden) return;
-      pullCommon(true);
-    }, AUTO_PULL_MS);
+  function saveAndClose() {
+    readSettingsForm();
+    saveSettings();
+    closeModal('modalSettings');
+    renderModeChip();
+    S.poll.nextAt = 0;
+    if (ghConfigured()) {
+      pollOnce(false).then(function () { return pushNow(); });
+      toast('저장했습니다 · 공용 파일에 연결합니다');
+    } else {
+      setConn('local');
+      toast('저장했습니다 (이 기기에만)');
+    }
   }
 
-  function toggleAutoPull() {
-    ui.autoPull = !ui.autoPull;
-    writeJSON(LS.ui, ui);
-    renderAutoBtn();
-    scheduleAutoPull();
-    toast(ui.autoPull ? '20초 자동 새로고침을 켰습니다.' : '자동 새로고침을 껐습니다. ⟳ 로 직접 새로고침하세요.');
+  function clearAll() {
+    if (!confirm('대화를 모두 지웁니다.\nGitHub 공용 파일(office-messages.json)도 함께 비워져 PC·폰 모두에서 사라집니다.\n계속할까요?')) return;
+    S.msgs = [];
+    saveLocal();
+    renderTimeline();
+    if (ghConfigured()) {
+      pushNow().then(function () { toast('대화를 지웠습니다 (공용 파일 포함)'); });
+    } else {
+      toast('대화를 지웠습니다');
+    }
   }
 
-  /* ============================================================
-     15. 이벤트 연결
-     ============================================================ */
+  function wipeKeys() {
+    if (!confirm('이 브라우저에 저장된 PAT·API 키를 모두 지웁니다.\n대화 내용은 그대로 둡니다. 계속할까요?')) return;
+    S.set.pat = '';
+    S.set.geminiKey = '';
+    S.set.orKey = '';
+    saveSettings();
+    fillSettings();
+    setConn('local');
+    renderModeChip();
+    toast('키를 모두 지웠습니다');
+  }
+
+  function renderPosList() {
+    var box = $('#posList');
+    if (!box) return;
+    box.innerHTML = '';
+    POSITIONS.forEach(function (p) {
+      var item = el('div', 'pos-item');
+      var prov = providerFor(p);
+      var provName = prov === 'gemini' ? '제미나이' : (prov === 'openrouter' ? '오픈라우터' : '데모');
+      item.innerHTML =
+        '<div class="pos-av" style="background:' + esc(p.color) + '">' + p.no + '</div>' +
+        '<div class="pos-tx"><b>' + esc(p.label) + '</b>' +
+        '<p>' + esc(p.role) + '</p>' +
+        '<div class="meta">현재 상태: ' + esc(S.status[p.no] || '대기') + ' · 실제 답변: ' + esc(provName) + '</div></div>' +
+        '<button class="pos-call" data-call="' + p.no + '">부르기</button>';
+      box.appendChild(item);
+    });
+  }
+
+  function callPosition(no) {
+    var p = posOf(no);
+    if (!p) return;
+    closeModal('modalPositions');
+    var input = $('#input');
+    if (input) {
+      input.value = '@' + p.tag + ' ';
+      input.focus();
+      autoGrow();
+    }
+  }
+
+  /* ---------- 10. 이벤트 연결 ---------- */
   function bind() {
-    // ☰ 메뉴
-    $('#menuBtn').addEventListener('click', function (e) {
-      e.stopPropagation();
-      var pop = $('#menuPop');
-      var willOpen = pop.hidden;
-      pop.hidden = !willOpen;
-      $('#menuBtn').setAttribute('aria-expanded', willOpen ? 'true' : 'false');
-    });
-    document.addEventListener('click', function (e) {
-      if (!e.target.closest('#menuPop') && !e.target.closest('#menuBtn')) closeMenu();
-    });
-    $$('#menuPop button').forEach(function (btn) {
-      btn.addEventListener('click', function () {
-        var what = btn.dataset.menu;
-        if (what === 'reset') resetChat();
-        else if (what === 'export') exportChat();
-        else if (what === 'pull') { closeMenu(); pullCommon(false); }
-        else if (what === 'help') { closeMenu(); openOverlay('helpOverlay'); }
-        else if (what === 'settings') { closeMenu(); openSettings(); }
-      });
-    });
+    $('#btnSend').addEventListener('click', send);
+    $('#btnStop').addEventListener('click', stopRelay);
+    $('#btnSettings').addEventListener('click', function () { fillSettings(); openModal('modalSettings'); });
+    $('#conn').addEventListener('click', function () { fillSettings(); openModal('modalSettings'); });
+    $('#btnMembers').addEventListener('click', function () { renderPosList(); openModal('modalPositions'); });
 
-    // 오피스 접기/펼치기
-    $('#dashBtn').addEventListener('click', function () {
-      ui.dashOpen = !ui.dashOpen;
-      writeJSON(LS.ui, ui);
-      renderDashOpen();
-    });
-    $('#dashClose').addEventListener('click', function () {
-      ui.dashOpen = false;
-      writeJSON(LS.ui, ui);
-      renderDashOpen();
-    });
-    $('#pullBtn').addEventListener('click', function () { pullCommon(false); });
-    $('#autoBtn').addEventListener('click', toggleAutoPull);
-
-    $('#onlineBtn').addEventListener('click', function () {
-      ui.dashOpen = true;
-      renderDashOpen();
-      toast(TEAM.map(function (e) { return '@' + e.name; }).join(' · ') + ' — 6명 출근');
-    });
-
-    // 카드 버튼 (지시 남기기 / 잔여 한도)
-    $('#cards').addEventListener('click', function (e) {
-      var btn = e.target.closest('[data-card-act]');
-      if (!btn) return;
-      var emp = empById(btn.dataset.emp);
-      if (!emp) return;
-      if (btn.dataset.cardAct === 'usage') {
-        openUsage(emp.id);
-      } else {
-        insertMention(emp.name);
-        toast('@' + emp.name + '에게 지시할 내용을 적고 Enter — ' +
-          (hasKey('github') ? '공용창에 커밋됩니다.' : '지금은 화면에만 남습니다(⚙️ GitHub PAT 필요).'));
-      }
-    });
-
-    // 설정
-    $('#settingsBtn').addEventListener('click', openSettings);
-    $('#saveKeysBtn').addEventListener('click', saveKeys);
-    $('#providerForms').addEventListener('click', function (e) {
-      var eye = e.target.closest('[data-eye]');
-      if (eye) {
-        var el = document.getElementById(eye.dataset.eye);
-        if (!el) return;
-        el.type = el.type === 'password' ? 'text' : 'password';
-        eye.textContent = el.type === 'password' ? '👁' : '🙈';
-        return;
-      }
-      var test = e.target.closest('[data-gh-test]');
-      if (test) {
-        var ghEl = document.getElementById('key-github');
-        // 테스트는 지금 입력한 값으로만 확인하고 저장하지 않는다
-        testGitHub(ghEl ? ghEl.value.trim() : (keys.github || '').trim());
-      }
-    });
-    $('#wipeBtn').addEventListener('click', function () {
-      if (!window.confirm('저장된 API 키, 대화, 사용량을 모두 지웁니다. 계속할까요?')) return;
-      [LS.msgs, LS.usage, LS.keys, LS.models, LS.ui].forEach(function (k) {
-        try { localStorage.removeItem(k); } catch (e) { /* noop */ }
-      });
-      messages = [];
-      keys = { openai: '', openrouter: '', anthropic: '', gemini: '', github: '' };
-      models = Object.assign({}, DEFAULT_MODELS);
-      TEAM.forEach(function (emp) {
-        usage[emp.id] = { pct: 100, calls: 0, resetAt: nextResetTime(Date.now()) };
-        runtime[emp.id] = { state: 'idle', since: 0 };
-      });
-      renderChat(true);
-      renderOffice();
-      renderHeader();
-      closeOverlay('settingsOverlay');
-      toast('모두 지웠습니다. 처음 상태로 돌아갔습니다.');
-    });
-
-    // 잔여 입력 모달
-    $('#usageRange').addEventListener('input', function () {
-      $('#usageNum').textContent = $('#usageRange').value;
-    });
-    $$('.preset-row button').forEach(function (b) {
-      b.addEventListener('click', function () {
-        $('#usageRange').value = b.dataset.preset;
-        $('#usageNum').textContent = b.dataset.preset;
-      });
-    });
-    $('#saveUsageBtn').addEventListener('click', saveUsage);
-
-    // 모달 닫기
-    $$('[data-close]').forEach(function (b) {
-      b.addEventListener('click', function () { closeOverlay(b.dataset.close); });
-    });
-    $$('.overlay').forEach(function (ov) {
-      ov.addEventListener('mousedown', function (e) {
-        if (e.target === ov) ov.classList.remove('open');
-      });
-    });
-    document.addEventListener('keydown', function (e) {
-      if (e.key === 'Escape') {
-        $$('.overlay.open').forEach(function (ov) { ov.classList.remove('open'); });
-        closeMenu();
-      }
-    });
-
-    // 멘션 칩
-    $('#chipRow').addEventListener('click', function (e) {
-      var chip = e.target.closest('.chip');
-      if (chip) insertMention(chip.dataset.mention);
-    });
-    input.addEventListener('input', function () { autoGrow(); updateChips(); });
+    var input = $('#input');
     input.addEventListener('keydown', function (e) {
       if (e.key === 'Enter' && !e.shiftKey && !e.isComposing) {
         e.preventDefault();
-        var text = input.value;
-        if (busy) { toast('아직 답변을 쓰고 있습니다. 잠시만요.'); return; }
-        if (!text.trim()) return;
-        input.value = '';
-        autoGrow();
-        updateChips();
-        sendText(text);
+        send();
       }
     });
-    $('#sendBtn').addEventListener('click', function () {
-      var text = input.value;
-      if (!text.trim()) { input.focus(); return; }
-      if (busy) { toast('아직 답변을 쓰고 있습니다. 잠시만요.'); return; }
-      input.value = '';
-      autoGrow();
-      updateChips();
-      sendText(text);
-    });
+    input.addEventListener('input', autoGrow);
 
-    // 퀵 액션
-    $$('.quick').forEach(function (b) {
-      b.addEventListener('click', function () {
-        if (busy) { toast('아직 답변을 쓰고 있습니다. 잠시만요.'); return; }
-        var kind = b.dataset.quick;
-        var text;
-        if (kind === 'summary') {
-          if (!mergedMessages().length) { toast('먼저 하고 싶은 일을 한 줄 적어 주세요.'); input.focus(); return; }
-          text = '@GPT 지금까지 오피스 대화를 회의록으로 정리해 줘. 다룬 이야기, 결정된 것, 보류된 것, 다음 안건 순서로 짧게.';
-        } else if (kind === 'todo') {
-          if (!mergedMessages().length) { toast('먼저 하고 싶은 일을 한 줄 적어 주세요.'); input.focus(); return; }
-          text = '@GPT 지금까지 대화를 실행할 수 있는 할 일 목록으로 뽑아 줘. 오늘·이번 주·다음 주로 나누고, 각 항목은 한 줄로.';
-        } else {
-          text = '@클로드 지금까지 대화를 바탕으로 스레드·인스타에 바로 올릴 홍보 초안을 써 줘. 서로 다른 스타일 3개.';
-        }
-        sendText(text);
-      });
-    });
-
-    // 첫 화면 예시 문장
-    $('#introChips').addEventListener('click', function (e) {
-      var b = e.target.closest('button[data-fill]');
+    $('#tags').addEventListener('click', function (e) {
+      var b = e.target.closest('.tag');
       if (!b) return;
-      input.value = b.dataset.fill;
+      var tag = b.getAttribute('data-tag');
+      input.value = tag + ' ' + input.value.replace(/^@\S+\s*/, '');
       input.focus();
       autoGrow();
-      updateChips();
+      var n = input.value.length;
+      try { input.setSelectionRange(n, n); } catch (err) { /* noop */ }
     });
 
-    // 스크롤 위치
-    $('#chat').addEventListener('scroll', function () {
-      var el = $('#chat');
-      stickToBottom = (el.scrollHeight - el.scrollTop - el.clientHeight) < 90;
+    $('#members').addEventListener('click', function (e) {
+      var b = e.target.closest('.mchip');
+      if (!b) return;
+      var no = parseInt(b.getAttribute('data-pos'), 10);
+      var p = posOf(no);
+      if (!p) return;
+      input.value = '@' + p.tag + ' ' + input.value.replace(/^@\S+\s*/, '');
+      input.focus();
+      autoGrow();
+      toast('@' + p.tag + ' 만 부릅니다');
     });
 
-    // 리셋 시각이 지난 직원은 100%로 채운다 (1분마다)
-    setInterval(function () {
-      var changed = false;
-      TEAM.forEach(function (emp) {
-        var u = usage[emp.id];
-        if (Date.now() >= u.resetAt) {
-          u.pct = 100;
-          u.calls = 0;
-          u.resetAt = nextResetTime(Date.now());
-          changed = true;
-        }
-      });
-      if (changed) { writeJSON(LS.usage, usage); renderOffice(); }
-    }, 60000);
+    $('#timeline').addEventListener('click', function (e) {
+      var more = e.target.closest('[data-more]');
+      if (more) {
+        var id = more.getAttribute('data-more');
+        S.expanded[id] = true;
+        renderTimeline();
+        return;
+      }
+      var a = e.target.closest('a');
+      if (a) a.setAttribute('target', '_blank');
+    });
 
-    // 상대 시간(마지막 활동) 주기 갱신 — 상태가 바뀔 때만 카드를 다시 그린다
-    setInterval(function () {
-      if (!document.hidden) updateOfficeTimes();
-    }, 30000);
+    $('#timeline').addEventListener('scroll', function () {
+      if (isNearBottom()) {
+        var j = $('#jump');
+        if (j) j.hidden = true;
+      }
+    });
+    var jump = $('#jump');
+    if (jump) jump.addEventListener('click', function () { scrollBottom(true); jump.hidden = true; });
+
+    document.addEventListener('click', function (e) {
+      var c = e.target.closest('[data-close]');
+      if (c) closeModal(c.getAttribute('data-close'));
+      var eye = e.target.closest('[data-eye]');
+      if (eye) {
+        var f = document.getElementById(eye.getAttribute('data-eye'));
+        if (f) f.type = f.type === 'password' ? 'text' : 'password';
+      }
+    });
+    document.querySelectorAll('.modal').forEach(function (m) {
+      m.addEventListener('click', function (e) { if (e.target === m) m.hidden = true; });
+    });
+
+    $('#btnSave').addEventListener('click', saveAndClose);
+    $('#btnTest').addEventListener('click', testConnection);
+    $('#btnSyncNow').addEventListener('click', function () {
+      readSettingsForm(); saveSettings();
+      pollOnce(true).then(function () { return pushNow(); });
+    });
+    $('#btnClear').addEventListener('click', clearAll);
+    $('#btnWipe').addEventListener('click', wipeKeys);
+
+    $('#posList').addEventListener('click', function (e) {
+      var b = e.target.closest('[data-call]');
+      if (!b) return;
+      callPosition(parseInt(b.getAttribute('data-call'), 10));
+    });
+
+    document.addEventListener('visibilitychange', function () {
+      if (!document.hidden) S.poll.nextAt = 0;
+    });
   }
 
-  /* ============================================================
-     16. 시작
-     ============================================================ */
+  /* ---------- 11. 연결 상태 배지 카운트다운 ---------- */
+  function tick() {
+    if (!ghConfigured()) { setConn('local'); return; }
+    if (S.poll.ok === false) { setConn('err'); return; }
+    var left = Math.max(0, Math.ceil((S.poll.nextAt - Date.now()) / 1000));
+    setConn(S.poll.ok === null ? 'local' : 'ok', left === 0 ? POLL_MS / 1000 : left);
+    if (Date.now() >= S.poll.nextAt && !document.hidden) {
+      S.poll.nextAt = Date.now() + POLL_MS;
+      pollOnce(false);
+    }
+  }
+
+  /* ---------- 12. 시작 ---------- */
+  function ensureIntro() {
+    var exists = S.msgs.some(function (m) { return m.id === 'intro-v3'; });
+    if (exists) return;
+    var txt = '안녕하세요 대표님, AI 소통창입니다. 👋\n\n' +
+      '여기는 대표님과 AI 직원 6명이 같은 방에서 대화하는 곳입니다.\n' +
+      '· 그냥 지시하면 **전체 회의**가 열립니다 (총괄 → 리서치 → 기획 → 개발 → 마케팅 → 검증)\n' +
+      '· `@기획` 처럼 한 명만 부르면 그 직원만 답합니다\n' +
+      '· `@현황보고` 는 각자 진행 상황 보고\n\n' +
+      '처음이면 🔑 설정에서 GitHub 토큰과 AI 키를 넣어 주세요. 없어도 데모로 회의 흐름을 바로 볼 수 있습니다.';
+    S.msgs.push({ id: 'intro-v3', role: 'ai', pos: 1, name: '방카르', tag: '총괄', text: txt, at: new Date().toISOString(), intro: true });
+    saveLocal();
+  }
+
   function init() {
-    renderDashboardFirst();
-    renderOffice();
-    renderHeader();
-    renderDashOpen();
-    renderAutoBtn();
-    renderChat(true);
+    loadLocal();
+    ensureIntro();
+    renderMembers();
+    renderTimeline();
+    renderModeChip();
     bind();
-    autoGrow();
-    updateChips();
-    scheduleAutoPull();
-    pullCommon(true);
+    setRunState('대기 중', false);
+    setConn('local');
+    setInterval(tick, 1000);
+    if (ghConfigured()) {
+      S.poll.nextAt = Date.now() + 800;
+      pollOnce(false);
+    }
+    scrollBottom(false);
+    window.__AISO.ready = true;
   }
 
-  function renderDashboardFirst() {
-    setSync('', '🐙 공용 소통창 · 읽는 중…');
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', init);
+  } else {
+    init();
   }
-
-  init();
 })();
 </script>
 </body>

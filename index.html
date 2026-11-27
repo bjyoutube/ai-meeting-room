@@ -129,6 +129,8 @@ code { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; fo
   .conn { font-size: 10.5px; padding: 4px 8px 4px 7px; }
   .bcol { max-width: 82%; }
   .hint { display: none; }
+  .tag { font-size: 10.5px; padding: 5px 8px; }
+  .tags { gap: 5px; }
 }
 
 /* ---------- 멤버 바 ---------- */
@@ -419,7 +421,7 @@ input:focus, select:focus { border-color: #F2C200; box-shadow: 0 0 0 3px rgba(25
       <button class="tag" data-tag="@검증">@검증</button>
     </div>
     <div class="inputbar">
-      <textarea id="input" rows="1" placeholder="메시지를 입력하세요 (Enter 전송 · Shift+Enter 줄바꿈)" aria-label="메시지 입력"></textarea>
+      <textarea id="input" rows="1" placeholder="메시지를 입력하세요 (Enter 전송)" aria-label="메시지 입력"></textarea>
       <button class="send" id="btnSend" aria-label="전송">↑</button>
     </div>
     <div class="under">
